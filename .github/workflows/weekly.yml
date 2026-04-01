@@ -1,0 +1,40 @@
+name: Weekly
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  full-build:
+    name: Full Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -B build -DENI_BUILD_TESTS=ON
+      - name: Build
+        run: cmake --build build --config Release
+      - name: Test
+        run: ctest --test-dir build --output-on-failure -C Release
+
+  report:
+    name: Weekly Report
+    runs-on: ubuntu-latest
+    needs: [full-build]
+    if: always()
+    steps:
+      - name: Summary
+        run: |
+          echo "## Weekly Report — ENI"
+          echo "| Job | Status |"
+          echo "|---|---|"
+          echo "| Full builds | ${{ needs.full-build.result }} |"
