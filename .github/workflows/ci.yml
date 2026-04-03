@@ -22,7 +22,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Configure
         run: cmake -B build -DENI_BUILD_TESTS=ON
       - name: Build
@@ -47,7 +47,7 @@ jobs:
             pkg: gcc-riscv64-linux-gnu
             cc: riscv64-linux-gnu-gcc
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install cross-compiler
         run: |
           sudo apt-get update
@@ -64,7 +64,7 @@ jobs:
     name: Sanitizers
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Build with ASAN/UBSAN
         run: |
           cmake -B build \
@@ -81,7 +81,7 @@ jobs:
     name: Coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Build with coverage
         run: |
           cmake -B build \
