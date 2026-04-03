@@ -104,6 +104,7 @@ eni_status_t eni_nn_forward(const eni_nn_model_t *model, const float *input,
     if (max_output < model->output_size) return ENI_ERR_INVALID;
 
     float buf_a[ENI_NN_MAX_NEURONS], buf_b[ENI_NN_MAX_NEURONS];
+    memset(buf_b, 0, sizeof(buf_b));
     memcpy(buf_a, input, (size_t)model->input_size * sizeof(float));
 
     float *src = buf_a, *dst = buf_b;
@@ -142,6 +143,9 @@ eni_status_t eni_nn_forward(const eni_nn_model_t *model, const float *input,
         float *tmp = src; src = dst; dst = tmp;
     }
 
-    memcpy(output, src, (size_t)model->output_size * sizeof(float));
+    int out_n = model->output_size;
+    if (out_n <= 0 || out_n > max_output || out_n > ENI_NN_MAX_NEURONS)
+        return ENI_ERR_INVALID;
+    memcpy(output, src, (size_t)out_n * sizeof(float));
     return ENI_OK;
 }
