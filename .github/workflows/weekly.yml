@@ -17,6 +17,8 @@ jobs:
 
       - name: Build with static analysis
         run: |
+          set -o pipefail
+          set -o pipefail
           cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug \
             -DENI_BUILD_TESTS=ON \
             -DENI_ENABLE_CPPCHECK=ON \
