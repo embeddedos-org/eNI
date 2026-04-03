@@ -4,6 +4,25 @@
 
 #include "eni_platform/platform.h"
 
+#if defined(__NEWLIB__) || defined(__arm__) || defined(__aarch64__)
+/* Bare-metal cross-compile: provide stubs */
+#ifndef _WIN32
+#include <stdint.h>
+eni_status_t eni_platform_init(void) { return ENI_OK; }
+eni_platform_info_t eni_platform_info(void) {
+    eni_platform_info_t info = {0};
+    info.os_name = "linux";
+    info.arch = "arm";
+    info.realtime_capable = false;
+    info.hardware_access = false;
+    return info;
+}
+void eni_platform_sleep_ms(uint32_t ms) { volatile uint32_t i; for(i=0;i<ms*1000;i++); }
+uint64_t eni_platform_monotonic_ms(void) { static uint64_t t=0; return t++; }
+#endif
+#else
+/* Full POSIX Linux platform */
+
 #ifndef _WIN32
 
 #include <time.h>
@@ -49,3 +68,4 @@ uint64_t eni_platform_monotonic_ms(void)
 }
 
 #endif /* !_WIN32 */
+#endif /* __NEWLIB__ / __arm__ guard */
