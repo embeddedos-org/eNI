@@ -11,7 +11,9 @@ eni_status_t eni_provider_init(eni_provider_t *prov, const eni_provider_ops_t *o
 {
     if (!prov || !ops || !name) return ENI_ERR_INVALID;
 
+    void *saved_ctx = prov->ctx;
     memset(prov, 0, sizeof(*prov));
+    prov->ctx = saved_ctx;
     size_t len = strlen(name);
     if (len >= ENI_PROVIDER_NAME_MAX) len = ENI_PROVIDER_NAME_MAX - 1;
     memcpy(prov->name, name, len);

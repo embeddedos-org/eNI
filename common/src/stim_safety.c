@@ -40,7 +40,7 @@ eni_status_t eni_stim_safety_check(const eni_stim_safety_t *safety,
         return ENI_ERR_PERMISSION;
 
     /* Rate limiting */
-    if (safety->last_stim_time_ms > 0 && safety->min_interval_ms > 0) {
+    if (safety->total_count > 0 && safety->min_interval_ms > 0) {
         uint64_t elapsed = current_time_ms - safety->last_stim_time_ms;
         if (elapsed < safety->min_interval_ms)
             return ENI_ERR_PERMISSION;
