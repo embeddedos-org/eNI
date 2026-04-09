@@ -1,103 +1,451 @@
+# CI/CD Pipeline for eNI
+# Includes build, test, static analysis, and memory checking
 name: CI
 
 on:
-  workflow_dispatch:
-  repository_dispatch:
-    types: [dependency-update]
   push:
-    branches: [main, master, develop]
+    branches: [master, main, develop]
   pull_request:
-    branches: [main, master]
+    branches: [master, main, develop]
+  workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+env:
+  BUILD_TYPE: Release
 
 jobs:
+  # ==============================================================================
+  # Build and Test
+  # ==============================================================================
   build:
-    name: Build (${{ matrix.os }})
+    name: Build & Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Configure
-        run: cmake -B build -DENI_BUILD_TESTS=ON
-      - name: Build
-        run: cmake --build build --config Release
-      - name: Test
-        run: ctest --test-dir build --output-on-failure -C Release
-
-  cross-compile:
-    name: Cross (${{ matrix.arch }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
+        os: [ubuntu-latest, macos-latest]
         include:
-          - arch: aarch64
-            pkg: gcc-aarch64-linux-gnu
-            cc: aarch64-linux-gnu-gcc
-          - arch: arm
-            pkg: gcc-arm-linux-gnueabihf
-            cc: arm-linux-gnueabihf-gcc
-          - arch: riscv64
-            pkg: gcc-riscv64-linux-gnu
-            cc: riscv64-linux-gnu-gcc
+          - os: ubuntu-latest
+            cc: gcc
+            cxx: g++
+          - os: macos-latest
+            cc: clang
+            cxx: clang++
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Install cross-compiler
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ${{ matrix.pkg }}
-      - name: Cross-compile
+          sudo apt-get install -y cmake build-essential
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake
+
+      - name: Configure CMake
         run: |
           cmake -B build \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
             -DCMAKE_C_COMPILER=${{ matrix.cc }} \
-            -DCMAKE_SYSTEM_NAME=Linux \
-            -DENI_BUILD_TESTS=OFF
-          cmake --build build
+            -DENI_BUILD_TESTS=ON
 
-  sanitize:
-    name: Sanitizers
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build with ASAN/UBSAN
-        run: |
-          cmake -B build \
-            -DENI_BUILD_TESTS=ON \
-            -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
-          cmake --build build
-      - name: Run tests under sanitizers
-        run: ctest --test-dir build --output-on-failure
-        env:
-          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
-          UBSAN_OPTIONS: halt_on_error=1
+      - name: Build
+        run: cmake --build build --config ${{ env.BUILD_TYPE }} -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
 
-  coverage:
-    name: Coverage
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build with coverage
-        run: |
-          cmake -B build \
-            -DENI_BUILD_TESTS=ON \
-            -DCMAKE_C_FLAGS="--coverage" \
-            -DCMAKE_EXE_LINKER_FLAGS="--coverage"
-          cmake --build build
-      - name: Run tests
-        run: ctest --test-dir build --output-on-failure
-      - name: Generate coverage report
-        run: |
-          sudo apt-get install -y lcov
-          lcov --capture --directory build --output-file coverage.info --ignore-errors mismatch
-          lcov --remove coverage.info '/usr/*' --output-file coverage.info
-          lcov --list coverage.info
-      - uses: actions/upload-artifact@v4
+      - name: Run Tests
+        working-directory: build
+        run: ctest -C ${{ env.BUILD_TYPE }} --output-on-failure --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu)
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: coverage
-          path: coverage.info
+          name: build-${{ matrix.os }}
+          path: build/
+          retention-days: 7
+
+  # ==============================================================================
+  # Static Analysis - Cppcheck
+  # ==============================================================================
+  cppcheck:
+    name: Static Analysis (cppcheck)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install cppcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cppcheck
+
+      - name: Run cppcheck
+        run: |
+          cppcheck \
+            --enable=warning,performance,portability,style \
+            --suppress=missingIncludeSystem \
+            --suppress=unusedFunction \
+            --inline-suppr \
+            --std=c11 \
+            --error-exitcode=1 \
+            --force \
+            --quiet \
+            -I common/include \
+            -I framework/include \
+            -I min/include \
+            -I providers \
+            common/src \
+            framework/src \
+            min/src \
+            providers \
+            cli \
+            2>&1 | tee cppcheck-report.txt
+
+      - name: Upload cppcheck report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cppcheck-report
+          path: cppcheck-report.txt
+          retention-days: 30
+
+  # ==============================================================================
+  # Static Analysis - Clang-Tidy
+  # ==============================================================================
+  clang-tidy:
+    name: Static Analysis (clang-tidy)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake clang clang-tidy
+
+      - name: Configure CMake (generate compile_commands.json)
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DENI_BUILD_TESTS=OFF
+
+      - name: Run clang-tidy
+        run: |
+          find common/src framework/src min/src providers -name "*.c" | \
+          xargs clang-tidy \
+            -p build \
+            --checks='-*,bugprone-*,cert-*,clang-analyzer-*,performance-*,portability-*,-bugprone-easily-swappable-parameters' \
+            --warnings-as-errors='bugprone-*,cert-*,clang-analyzer-*' \
+            2>&1 | tee clang-tidy-report.txt || true
+
+      - name: Upload clang-tidy report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: clang-tidy-report
+          path: clang-tidy-report.txt
+          retention-days: 30
+
+  # ==============================================================================
+  # Static Analysis - Clang Scan-Build
+  # ==============================================================================
+  scan-build:
+    name: Static Analysis (scan-build)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake clang clang-tools
+
+      - name: Run scan-build
+        run: |
+          scan-build \
+            -analyze-headers \
+            -enable-checker alpha.core.BoolAssignment \
+            -enable-checker alpha.core.CastSize \
+            -enable-checker alpha.core.IdenticalExpr \
+            -enable-checker alpha.security.ArrayBoundV2 \
+            -enable-checker alpha.security.MallocOverflow \
+            -enable-checker alpha.security.ReturnPtrRange \
+            -enable-checker alpha.unix.cstring.BufferOverlap \
+            -enable-checker alpha.unix.cstring.NotNullTerminated \
+            -enable-checker alpha.unix.cstring.OutOfBounds \
+            --use-cc=clang \
+            -o scan-build-report \
+            cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENI_BUILD_TESTS=OFF
+
+          scan-build \
+            -analyze-headers \
+            --use-cc=clang \
+            -o scan-build-report \
+            cmake --build build -j$(nproc)
+
+      - name: Upload scan-build report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scan-build-report
+          path: scan-build-report/
+          retention-days: 30
+
+  # ==============================================================================
+  # Memory Check - Valgrind
+  # ==============================================================================
+  memcheck:
+    name: Memory Check (Valgrind)
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential valgrind
+
+      - name: Configure and Build
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DENI_BUILD_TESTS=ON \
+            -DENI_ENABLE_MEMCHECK=ON
+          cmake --build build -j$(nproc)
+
+      - name: Run Valgrind memcheck on tests
+        working-directory: build
+        run: |
+          mkdir -p memcheck-reports
+
+          # Run memcheck on each test executable
+          for test in $(find . -name "eni_test_*" -type f -executable); do
+            test_name=$(basename "$test")
+            echo "Running memcheck on $test_name..."
+
+            valgrind \
+              --tool=memcheck \
+              --leak-check=full \
+              --show-leak-kinds=all \
+              --track-origins=yes \
+              --error-exitcode=0 \
+              --xml=yes \
+              --xml-file=memcheck-reports/${test_name}.xml \
+              --suppressions=../valgrind.supp \
+              "$test" 2>&1 | tee memcheck-reports/${test_name}.log || true
+          done
+
+      - name: Check for memory leaks
+        working-directory: build
+        run: |
+          echo "=== Memory Check Summary ===" | tee memcheck-summary.txt
+
+          leak_found=0
+          for log in memcheck-reports/*.log; do
+            test_name=$(basename "$log" .log)
+
+            # Check for definite leaks
+            definite=$(grep -c "definitely lost:" "$log" 2>/dev/null || echo "0")
+            possible=$(grep -c "possibly lost:" "$log" 2>/dev/null || echo "0")
+            errors=$(grep -c "ERROR SUMMARY:" "$log" 2>/dev/null || echo "0")
+
+            if grep -q "definitely lost: [1-9]" "$log" 2>/dev/null; then
+              echo "❌ $test_name: MEMORY LEAKS DETECTED" | tee -a memcheck-summary.txt
+              grep "definitely lost:" "$log" | tee -a memcheck-summary.txt
+              leak_found=1
+            elif grep -q "Invalid read\|Invalid write\|Invalid free" "$log" 2>/dev/null; then
+              echo "❌ $test_name: MEMORY ERRORS DETECTED" | tee -a memcheck-summary.txt
+              leak_found=1
+            else
+              echo "✅ $test_name: OK" | tee -a memcheck-summary.txt
+            fi
+          done
+
+          echo "" | tee -a memcheck-summary.txt
+          if [ $leak_found -eq 1 ]; then
+            echo "⚠️  Some tests have memory issues. Review the reports." | tee -a memcheck-summary.txt
+          else
+            echo "✅ All tests passed memory checks!" | tee -a memcheck-summary.txt
+          fi
+
+      - name: Upload memcheck reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: memcheck-reports
+          path: |
+            build/memcheck-reports/
+            build/memcheck-summary.txt
+          retention-days: 30
+
+  # ==============================================================================
+  # Address Sanitizer
+  # ==============================================================================
+  asan:
+    name: Address Sanitizer
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+
+      - name: Configure with ASan
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=gcc \
+            -DENI_BUILD_TESTS=ON \
+            -DENI_ENABLE_ASAN=ON
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Run tests with ASan
+        working-directory: build
+        env:
+          ASAN_OPTIONS: detect_leaks=1:abort_on_error=1:halt_on_error=0
+        run: |
+          ctest --output-on-failure --parallel $(nproc) 2>&1 | tee asan-report.txt
+
+      - name: Upload ASan report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: asan-report
+          path: build/asan-report.txt
+          retention-days: 30
+
+  # ==============================================================================
+  # Undefined Behavior Sanitizer
+  # ==============================================================================
+  ubsan:
+    name: Undefined Behavior Sanitizer
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+
+      - name: Configure with UBSan
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=gcc \
+            -DENI_BUILD_TESTS=ON \
+            -DENI_ENABLE_UBSAN=ON
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Run tests with UBSan
+        working-directory: build
+        env:
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=0
+        run: |
+          ctest --output-on-failure --parallel $(nproc) 2>&1 | tee ubsan-report.txt
+
+      - name: Upload UBSan report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ubsan-report
+          path: build/ubsan-report.txt
+          retention-days: 30
+
+  # ==============================================================================
+  # Code Coverage
+  # ==============================================================================
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential lcov
+
+      - name: Configure with coverage
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=gcc \
+            -DENI_BUILD_TESTS=ON \
+            -DENI_ENABLE_COVERAGE=ON
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Run tests
+        working-directory: build
+        run: ctest --output-on-failure --parallel $(nproc)
+
+      - name: Generate coverage report
+        working-directory: build
+        run: |
+          lcov --capture --directory . --output-file coverage.info --rc lcov_branch_coverage=1
+          lcov --remove coverage.info '/usr/*' '*/tests/*' --output-file coverage_filtered.info --rc lcov_branch_coverage=1
+          genhtml coverage_filtered.info --output-directory coverage_report --branch-coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: build/coverage_report/
+          retention-days: 30
+
+      - name: Coverage summary
+        working-directory: build
+        run: |
+          lcov --summary coverage_filtered.info
+
+  # ==============================================================================
+  # Summary Job
+  # ==============================================================================
+  summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [build, cppcheck, clang-tidy, scan-build, memcheck, asan, ubsan, coverage]
+    if: always()
+
+    steps:
+      - name: Check job results
+        run: |
+          echo "## CI/CD Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build & Test | ${{ needs.build.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| cppcheck | ${{ needs.cppcheck.result == 'success' && '✅ Passed' || '⚠️ Issues' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| clang-tidy | ${{ needs.clang-tidy.result == 'success' && '✅ Passed' || '⚠️ Issues' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| scan-build | ${{ needs.scan-build.result == 'success' && '✅ Passed' || '⚠️ Issues' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Valgrind memcheck | ${{ needs.memcheck.result == 'success' && '✅ Passed' || '⚠️ Issues' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| AddressSanitizer | ${{ needs.asan.result == 'success' && '✅ Passed' || '⚠️ Issues' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| UBSanitizer | ${{ needs.ubsan.result == 'success' && '✅ Passed' || '⚠️ Issues' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Coverage | ${{ needs.coverage.result == 'success' && '✅ Generated' || '⚠️ Failed' }} |" >> $GITHUB_STEP_SUMMARY

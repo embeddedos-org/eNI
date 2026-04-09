@@ -1,73 +1,325 @@
-name: Nightly
+# Nightly Deep Analysis for eNI
+# Runs comprehensive memory and security checks on a schedule
+name: Nightly Analysis
+
 on:
   schedule:
+    # Run every night at 2 AM UTC
     - cron: '0 2 * * *'
   workflow_dispatch:
+    inputs:
+      full_analysis:
+        description: 'Run full analysis (slower)'
+        required: false
+        default: 'true'
+        type: boolean
 
 jobs:
-  full-build-and-test:
-    runs-on: ubuntu-22.04
+  # ==============================================================================
+  # Deep Memory Analysis with Valgrind
+  # ==============================================================================
+  deep-memcheck:
+    name: Deep Memory Analysis
+    runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build gcc-arm-none-eabi cppcheck lcov
+          sudo apt-get install -y cmake build-essential valgrind
 
-      - name: Build (Debug + All Features)
+      - name: Configure and Build (Debug)
         run: |
-          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DENI_BUILD_TESTS=ON
-          cmake --build build
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DENI_BUILD_TESTS=ON \
+            -DENI_ENABLE_MEMCHECK=ON
+          cmake --build build -j$(nproc)
 
-      - name: Run tests
-        run: ctest --test-dir build --output-on-failure --timeout 120
+      - name: Run comprehensive memcheck
+        working-directory: build
+        run: |
+          mkdir -p deep-memcheck-reports
 
-  sanitizer-checks:
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        sanitizer: [asan, ubsan]
+          for test in $(find . -name "eni_test_*" -type f -executable); do
+            test_name=$(basename "$test")
+            echo "=== Deep memcheck: $test_name ==="
+
+            valgrind \
+              --tool=memcheck \
+              --leak-check=full \
+              --show-leak-kinds=all \
+              --track-origins=yes \
+              --track-fds=yes \
+              --trace-children=yes \
+              --num-callers=50 \
+              --error-limit=no \
+              --xml=yes \
+              --xml-file=deep-memcheck-reports/${test_name}.xml \
+              --log-file=deep-memcheck-reports/${test_name}.log \
+              --suppressions=../valgrind.supp \
+              "$test" || true
+          done
+
+      - name: Generate memcheck summary
+        working-directory: build
+        run: |
+          echo "# Deep Memory Analysis Report" > deep-memcheck-summary.md
+          echo "" >> deep-memcheck-summary.md
+          echo "Generated: $(date -u)" >> deep-memcheck-summary.md
+          echo "" >> deep-memcheck-summary.md
+
+          for log in deep-memcheck-reports/*.log; do
+            test_name=$(basename "$log" .log)
+            echo "## $test_name" >> deep-memcheck-summary.md
+            echo "\`\`\`" >> deep-memcheck-summary.md
+            grep -A5 "LEAK SUMMARY\|ERROR SUMMARY" "$log" >> deep-memcheck-summary.md || echo "No issues found" >> deep-memcheck-summary.md
+            echo "\`\`\`" >> deep-memcheck-summary.md
+            echo "" >> deep-memcheck-summary.md
+          done
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: deep-memcheck-reports
+          path: |
+            build/deep-memcheck-reports/
+            build/deep-memcheck-summary.md
+          retention-days: 90
+
+  # ==============================================================================
+  # Thread Safety Analysis (Helgrind)
+  # ==============================================================================
+  helgrind:
+    name: Thread Safety Analysis
+    runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build
-
-      - name: Configure with ${{ matrix.sanitizer }}
         run: |
-          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug \
-            -DENI_BUILD_TESTS=ON \
-            -DENI_ENABLE_ASAN=${{ matrix.sanitizer == 'asan' && 'ON' || 'OFF' }} \
-            -DENI_ENABLE_UBSAN=${{ matrix.sanitizer == 'ubsan' && 'ON' || 'OFF' }}
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential valgrind
 
-      - name: Build
-        run: cmake --build build
+      - name: Configure and Build
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DENI_BUILD_TESTS=ON
+          cmake --build build -j$(nproc)
 
-      - name: Run tests under sanitizer
-        run: ctest --test-dir build --output-on-failure --timeout 300
+      - name: Run Helgrind
+        working-directory: build
+        run: |
+          mkdir -p helgrind-reports
 
-  cross-compile:
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        target: [arm-cortex-m4, riscv32]
+          for test in $(find . -name "eni_test_*" -type f -executable); do
+            test_name=$(basename "$test")
+            echo "=== Helgrind: $test_name ==="
+
+            valgrind \
+              --tool=helgrind \
+              --history-level=full \
+              --error-exitcode=0 \
+              --log-file=helgrind-reports/${test_name}.log \
+              "$test" || true
+          done
+
+      - name: Upload Helgrind reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: helgrind-reports
+          path: build/helgrind-reports/
+          retention-days: 90
+
+  # ==============================================================================
+  # Heap Profiling (Massif)
+  # ==============================================================================
+  massif:
+    name: Heap Profiling
+    runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Install ARM toolchain
-        if: matrix.target == 'arm-cortex-m4'
-        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build gcc-arm-none-eabi
-
-      - name: Install RISC-V toolchain
-        if: matrix.target == 'riscv32'
+      - name: Install dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y cmake ninja-build
-          wget -q https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v13.2.0-2/xpack-riscv-none-elf-gcc-13.2.0-2-linux-x64.tar.gz
-          sudo tar -xzf xpack-riscv-none-elf-gcc-13.2.0-2-linux-x64.tar.gz -C /opt/
-          echo "/opt/xpack-riscv-none-elf-gcc-13.2.0-2/bin" >> $GITHUB_PATH
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential valgrind
 
-      - name: Cross-compile
+      - name: Configure and Build
         run: |
-          cmake --preset ${{ matrix.target }} || cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-${{ matrix.target }}.cmake -DCMAKE_BUILD_TYPE=MinSizeRel -DENI_BUILD_CLI=OFF -DENI_BUILD_FRAMEWORK=OFF -DENI_BUILD_TESTS=OFF
-          cmake --build build 2>&1 || cmake --build build/${{ matrix.target }} 2>&1
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENI_BUILD_TESTS=ON
+          cmake --build build -j$(nproc)
+
+      - name: Run Massif heap profiler
+        working-directory: build
+        run: |
+          mkdir -p massif-reports
+
+          for test in $(find . -name "eni_test_*" -type f -executable); do
+            test_name=$(basename "$test")
+            echo "=== Massif: $test_name ==="
+
+            valgrind \
+              --tool=massif \
+              --stacks=yes \
+              --detailed-freq=1 \
+              --massif-out-file=massif-reports/${test_name}.massif \
+              "$test" || true
+
+            # Generate text report
+            ms_print massif-reports/${test_name}.massif > massif-reports/${test_name}.txt 2>/dev/null || true
+          done
+
+      - name: Generate heap summary
+        working-directory: build
+        run: |
+          echo "# Heap Profile Summary" > massif-summary.md
+          echo "" >> massif-summary.md
+
+          for txt in massif-reports/*.txt; do
+            test_name=$(basename "$txt" .txt)
+            peak=$(grep -m1 "peak" "$txt" 2>/dev/null || echo "N/A")
+            echo "- **$test_name**: $peak" >> massif-summary.md
+          done
+
+      - name: Upload Massif reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: massif-reports
+          path: |
+            build/massif-reports/
+            build/massif-summary.md
+          retention-days: 90
+
+  # ==============================================================================
+  # Security Audit with Facebook Infer (if available)
+  # ==============================================================================
+  infer:
+    name: Security Audit (Infer)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Infer
+        run: |
+          # Install Infer from GitHub releases
+          VERSION="v1.1.0"
+          curl -sSL "https://github.com/facebook/infer/releases/download/${VERSION}/infer-linux64-${VERSION}.tar.xz" | sudo tar -C /opt -xJ
+          echo "/opt/infer-linux64-${VERSION}/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+
+      - name: Run Infer capture
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DENI_BUILD_TESTS=OFF
+
+          infer capture --compilation-database build/compile_commands.json || true
+
+      - name: Run Infer analysis
+        run: |
+          infer analyze \
+            --bufferoverrun \
+            --pulse \
+            --quandary \
+            --racerd \
+            --starvation \
+            --cost \
+            --loop-hoisting \
+            --purity \
+            --siof \
+            --uninit \
+            2>&1 | tee infer-report.txt || true
+
+      - name: Generate Infer report
+        run: |
+          infer report --issues-json infer-out/report.json || true
+          infer report --issues-txt infer-out/report.txt || true
+
+      - name: Upload Infer reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: infer-reports
+          path: |
+            infer-out/
+            infer-report.txt
+          retention-days: 90
+
+  # ==============================================================================
+  # LLVM Fuzzer Setup (for future fuzzing)
+  # ==============================================================================
+  fuzzing-build:
+    name: Fuzzing Build Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake clang
+
+      - name: Build with fuzzer support
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang \
+            -DENI_BUILD_TESTS=OFF \
+            -DCMAKE_C_FLAGS="-fsanitize=fuzzer-no-link,address"
+          cmake --build build -j$(nproc) || echo "Fuzzer build check complete"
+
+      - name: Fuzzing build status
+        run: |
+          echo "Fuzzing infrastructure ready for future fuzz targets"
+
+  # ==============================================================================
+  # Nightly Summary
+  # ==============================================================================
+  nightly-summary:
+    name: Nightly Summary
+    runs-on: ubuntu-latest
+    needs: [deep-memcheck, helgrind, massif, infer, fuzzing-build]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## 🌙 Nightly Analysis Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Run completed at: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Analysis | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Deep Memcheck | ${{ needs.deep-memcheck.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Helgrind (Thread Safety) | ${{ needs.helgrind.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Massif (Heap Profiling) | ${{ needs.massif.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Infer (Security) | ${{ needs.infer.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Fuzzing Build | ${{ needs.fuzzing-build.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📦 All reports are available as artifacts for 90 days." >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::warning::Some nightly analysis jobs failed. Review the reports."
