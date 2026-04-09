@@ -12,7 +12,10 @@ eni_status_t eni_decoder_init(eni_decoder_t *dec, const eni_decoder_ops_t *ops,
     if (!dec || !ops) return ENI_ERR_INVALID;
     memset(dec, 0, sizeof(*dec));
     dec->ops = ops;
-    if (ops->name) strncpy(dec->name, ops->name, 63);
+    if (ops->name) {
+        strncpy(dec->name, ops->name, sizeof(dec->name) - 1);
+        dec->name[sizeof(dec->name) - 1] = '\0';
+    }
     if (ops->init) return ops->init(dec, cfg);
     return ENI_OK;
 }

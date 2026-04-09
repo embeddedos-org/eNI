@@ -1,0 +1,66 @@
+# Valgrind Suppression File for eNI
+# SPDX-License-Identifier: MIT
+#
+# This file contains suppressions for known false positives
+# and third-party library issues.
+
+# macOS system library suppressions
+{
+   macos_dyld
+   Memcheck:Leak
+   ...
+   obj:/usr/lib/dyld
+}
+
+{
+   macos_libsystem
+   Memcheck:Leak
+   ...
+   obj:/usr/lib/system/*
+}
+
+# pthread-related suppressions (common false positives)
+{
+   pthread_create_leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_pthread_create
+}
+
+{
+   pthread_stack_leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:pthread_create*
+}
+
+# dlopen/dlsym related
+{
+   dlopen_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:dlopen*
+}
+
+# Static initialization (expected reachable at program end)
+{
+   static_init_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   ...
+   fun:_dl_init
+}
+
+# Intentional one-time allocations in ENI
+{
+   eni_config_singleton
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   ...
+   fun:eni_config_*
+}

@@ -4,6 +4,7 @@
 
 #include "generic.h"
 #include "eni/log.h"
+#include "eni/event.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -121,7 +122,7 @@ static eni_status_t generic_start(eni_provider_t *prov)
             return ENI_ERR_CONNECT;
         }
 
-        if (connect(ctx->sock, res->ai_addr, (int)res->ai_addrlen) != 0) {
+        if (connect(ctx->sock, res->ai_addr, (socklen_t)res->ai_addrlen) != 0) {
             ENI_LOG_ERROR("generic", "TCP connect failed to %s:%d", host, port);
             sock_close(ctx->sock);
             ctx->sock = SOCK_INVALID;
@@ -132,7 +133,8 @@ static eni_status_t generic_start(eni_provider_t *prov)
 
         ENI_LOG_INFO("generic", "TCP connected to %s:%d", host, port);
 
-    } else if (ctx->transport == ENI_TRANSPORT_UDP) {
+    } else if (ctx->transport == ENI_TRANSPORT_SHARED_MEM) {
+        /* Treat shared memory transport like UDP for now */
         struct addrinfo hints, *res;
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_INET;
@@ -153,7 +155,7 @@ static eni_status_t generic_start(eni_provider_t *prov)
         }
 
         /* For UDP, connect() sets the default destination */
-        if (connect(ctx->sock, res->ai_addr, (int)res->ai_addrlen) != 0) {
+        if (connect(ctx->sock, res->ai_addr, (socklen_t)res->ai_addrlen) != 0) {
             ENI_LOG_ERROR("generic", "UDP connect failed to %s:%d", host, port);
             sock_close(ctx->sock);
             ctx->sock = SOCK_INVALID;
@@ -189,14 +191,15 @@ static eni_status_t generic_poll(eni_provider_t *prov, eni_event_t *ev)
 
     /* Read incoming data */
     uint8_t buf[4096];
-    int n = recv(ctx->sock, (char *)buf, sizeof(buf), 0);
+    ssize_t n = recv(ctx->sock, (char *)buf, sizeof(buf), 0);
     if (n <= 0) return ENI_ERR_TIMEOUT;
 
     /* Parse received data into event */
     if (ev) {
-        ev->type = ENI_EVENT_DATA;
-        ev->data = buf;
-        ev->data_len = (size_t)n;
+        ev->type = ENI_EVENT_RAW;
+        size_t copy_len = (size_t)n < ENI_EVENT_PAYLOAD_MAX ? (size_t)n : ENI_EVENT_PAYLOAD_MAX;
+        memcpy(ev->payload.raw.data, buf, copy_len);
+        ev->payload.raw.len = copy_len;
     }
     return ENI_OK;
 #else
@@ -217,9 +220,10 @@ static eni_status_t generic_poll(eni_provider_t *prov, eni_event_t *ev)
     if (n <= 0) return ENI_ERR_TIMEOUT;
 
     if (ev) {
-        ev->type = ENI_EVENT_DATA;
-        ev->data = buf;
-        ev->data_len = (size_t)n;
+        ev->type = ENI_EVENT_RAW;
+        size_t copy_len = (size_t)n < ENI_EVENT_PAYLOAD_MAX ? (size_t)n : ENI_EVENT_PAYLOAD_MAX;
+        memcpy(ev->payload.raw.data, buf, copy_len);
+        ev->payload.raw.len = copy_len;
     }
     return ENI_OK;
 #endif

@@ -4,8 +4,10 @@
 
 #include "mock_provider.h"
 #include <string.h>
+#include <stdio.h>
 
 static eni_status_t mock_init(eni_provider_t *prov, const void *config) {
+    (void)config;
     mock_provider_ctx_t *ctx = (mock_provider_ctx_t *)prov->ctx;
     if (!ctx) return ENI_ERR_INVALID;
 

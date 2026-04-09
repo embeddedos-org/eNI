@@ -23,7 +23,8 @@ eni_status_t eni_feedback_controller_add_rule(eni_feedback_controller_t *ctrl,
     if (ctrl->rule_count >= ENI_FEEDBACK_MAX_RULES) return ENI_ERR_OVERFLOW;
 
     eni_feedback_rule_t *rule = &ctrl->rules[ctrl->rule_count];
-    strncpy(rule->trigger_intent, intent, 63);
+    strncpy(rule->trigger_intent, intent, sizeof(rule->trigger_intent) - 1);
+    rule->trigger_intent[sizeof(rule->trigger_intent) - 1] = '\0';
     rule->min_confidence = min_conf;
     rule->response = *response;
     rule->active = true;
@@ -69,7 +70,8 @@ eni_status_t eni_feedback_controller_evaluate(eni_feedback_controller_t *ctrl,
         feedback_ev->payload.feedback.amplitude = rule->response.amplitude;
         feedback_ev->payload.feedback.duration_ms = rule->response.duration_ms;
         feedback_ev->payload.feedback.frequency_hz = rule->response.frequency_hz;
-        strncpy(feedback_ev->source, "feedback_ctrl", ENI_EVENT_SOURCE_MAX - 1);
+        strncpy(feedback_ev->source, "feedback_ctrl", sizeof(feedback_ev->source) - 1);
+        feedback_ev->source[sizeof(feedback_ev->source) - 1] = '\0';
 
         return ENI_OK;
     }
