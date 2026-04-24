@@ -226,6 +226,55 @@ ctest --test-dir build --output-on-failure
 
 ---
 
+## 🔐 Security & Safety
+
+ENI handles neural signals and electrical stimulation — safety is paramount.
+
+### Stimulation Safety (`common/src/stim_safety.c`)
+
+The stimulation safety module enforces **hardware-level safety interlocks** that cannot be overridden by software:
+
+| Safety Check | Description |
+|-------------|-------------|
+| **Absolute Amplitude Limit** | Hard-coded maximum amplitude that can never be exceeded (`ENI_STIM_ABSOLUTE_MAX_AMPLITUDE`) |
+| **Absolute Duration Limit** | Hard-coded maximum pulse duration (`ENI_STIM_ABSOLUTE_MAX_DURATION_MS`) |
+| **Configurable Limits** | Per-session amplitude and duration limits (must be ≤ absolute limits) |
+| **Rate Limiting** | Minimum interval between stimulation pulses |
+| **Daily Count Limit** | Maximum stimulation events per day |
+
+### Policy Engine (`common/src/policy.c`)
+
+Rule-based access control for neural interface actions:
+
+| Feature | Description |
+|---------|-------------|
+| **Action-based Rules** | ALLOW / DENY / CONFIRM verdicts per action |
+| **Action Classes** | `SAFE`, `CONTROLLED`, `RESTRICTED` classification |
+| **Default Policy** | Configurable default-deny or default-allow |
+
+### Neural Data Protection
+
+| Layer | Protection |
+|-------|------------|
+| **Acquisition** | Provider framework validates all data sources before reading |
+| **Processing** | DSP pipeline processes data in isolated buffers |
+| **Classification** | Neural network inference runs locally — no cloud dependency |
+| **Output** | Policy engine validates all output actions before execution |
+| **Stimulation** | Multi-layer safety checks before any electrical output |
+
+### Safety Checklist
+
+- [ ] Set `default_deny = true` in the policy engine for production
+- [ ] Configure stimulation safety limits appropriate for your use case
+- [ ] Verify all providers are properly initialized before streaming
+- [ ] Enable audit logging for all stimulation events
+- [ ] Run nightly CI with sanitizers and valgrind memcheck
+- [ ] Test emergency stop functionality before deployment
+
+For vulnerability reports, see [SECURITY.md](SECURITY.md).
+
+---
+
 ## Related Projects
 
 | Project | Repository | Purpose |

@@ -35,6 +35,30 @@ jobs:
           echo "=== System Libraries ==="
           ldd build/eni 2>/dev/null || echo "Static build or not built"
 
+  valgrind:
+    name: Valgrind Memcheck
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build valgrind
+
+      - name: Build (Debug)
+        run: |
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DENI_BUILD_TESTS=ON
+          cmake --build build -j$(nproc)
+
+      - name: Run tests under Valgrind
+        run: |
+          for test in $(find build -name "eni_test_*" -type f -executable 2>/dev/null); do
+            echo "=== Valgrind: $(basename $test) ==="
+            valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=1 \
+              --track-origins=yes --suppressions=valgrind.supp "$test" || true
+          done
+
       - name: Upload analysis report
         uses: actions/upload-artifact@v7
         with:

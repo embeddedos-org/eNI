@@ -16,6 +16,37 @@ on:
 
 jobs:
   # ==============================================================================
+  # AddressSanitizer + UndefinedBehaviorSanitizer
+  # ==============================================================================
+  sanitizers:
+    name: Sanitizers (ASan + UBSan)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+
+      - name: Build with AddressSanitizer + UndefinedBehaviorSanitizer
+        run: |
+          cmake -B build-san \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DENI_BUILD_TESTS=ON \
+            -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+          cmake --build build-san -j$(nproc)
+
+      - name: Run tests under sanitizers
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1:abort_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: ctest --test-dir build-san --output-on-failure
+
+  # ==============================================================================
   # Deep Memory Analysis with Valgrind
   # ==============================================================================
   deep-memcheck:
@@ -299,7 +330,7 @@ jobs:
   nightly-summary:
     name: Nightly Summary
     runs-on: ubuntu-latest
-    needs: [deep-memcheck, helgrind, massif, infer, fuzzing-build]
+    needs: [sanitizers, deep-memcheck, helgrind, massif, infer, fuzzing-build]
     if: always()
 
     steps:
@@ -311,6 +342,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Analysis | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Sanitizers (ASan+UBSan) | ${{ needs.sanitizers.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Deep Memcheck | ${{ needs.deep-memcheck.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Helgrind (Thread Safety) | ${{ needs.helgrind.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Massif (Heap Profiling) | ${{ needs.massif.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
