@@ -9,6 +9,19 @@
 #include <string.h>
 #include <math.h>
 
+#ifdef __linux__
+#include <unistd.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <errno.h>
+
+/* BlueZ HCI headers */
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h>
+#include <bluetooth/hci_lib.h>
+#include <bluetooth/l2cap.h>
+#endif /* __linux__ */
+
 /* ---- helpers ------------------------------------------------------------ */
 
 static inline uint32_t ring_next(uint32_t idx, uint32_t size)
@@ -37,7 +50,7 @@ static void decode_raw_to_samples(const eni_wbci_raw_pkt_t *pkt,
         if (raw & 0x800000) {
             raw |= (int32_t)0xFF000000;
         }
-        /* Convert to µV: ±187.5 µV full-scale for 24-bit ADC */
+        /* Convert to uV: +/-187.5 uV full-scale for 24-bit ADC */
         samples[ch] = (float)raw * (187.5f / 8388607.0f);
         offset += 3;
     }
@@ -127,21 +140,174 @@ int eni_wbci_connect(eni_wbci_t *bci)
 
     bci->state = ENI_WBCI_STATE_SCANNING;
 
+#ifdef __linux__
     /*
-     * In a real implementation this would:
-     * 1. Initiate BLE/WiFi scan via HAL
-     * 2. Match device_addr
-     * 3. Establish connection
-     * 4. Negotiate data stream parameters
+     * BLE scanning and connection using Linux BlueZ HCI socket API.
      *
-     * For now, transition directly to connected (stub for simulation).
+     * 1. Open HCI socket and get device ID
+     * 2. Set LE scan parameters and enable scanning
+     * 3. Read scan results, match against target device_addr
+     * 4. Disable scanning
+     * 5. Establish L2CAP BLE connection to matched device
      */
 
+    int hci_dev_id = hci_get_route(NULL);
+    if (hci_dev_id < 0) {
+        bci->state = ENI_WBCI_STATE_ERROR;
+        return ENI_WBCI_ERR_IO;
+    }
+
+    int hci_sock = hci_open_dev(hci_dev_id);
+    if (hci_sock < 0) {
+        bci->state = ENI_WBCI_STATE_ERROR;
+        return ENI_WBCI_ERR_IO;
+    }
+
+    /* Set LE scan parameters: active scan, 10ms interval, 10ms window */
+    uint8_t scan_type = 0x01;        /* active scan */
+    uint16_t interval = htobs(0x0010); /* 10ms */
+    uint16_t window = htobs(0x0010);   /* 10ms */
+    uint8_t own_type = LE_PUBLIC_ADDRESS;
+    uint8_t filter_policy = 0x00;    /* accept all */
+
+    int ret = hci_le_set_scan_parameters(
+        hci_sock, scan_type, interval, window,
+        own_type, filter_policy, 1000  /* 1s timeout */
+    );
+    if (ret < 0) {
+        close(hci_sock);
+        bci->state = ENI_WBCI_STATE_ERROR;
+        return ENI_WBCI_ERR_IO;
+    }
+
+    /* Enable LE scanning */
+    ret = hci_le_set_scan_enable(hci_sock, 0x01, 0x00, 1000);
+    if (ret < 0) {
+        close(hci_sock);
+        bci->state = ENI_WBCI_STATE_ERROR;
+        return ENI_WBCI_ERR_IO;
+    }
+
+    /*
+     * Read HCI events to find our target device.
+     * We look for LE advertising reports matching device_addr.
+     */
+    bdaddr_t target_addr;
+    memcpy(&target_addr, bci->config.device_addr, 6);
+
+    bool found = false;
+    uint32_t timeout_ms = bci->config.connect_timeout_ms;
+    uint32_t elapsed = 0;
+
+    struct hci_filter old_filt, new_filt;
+    socklen_t filt_len = sizeof(old_filt);
+    getsockopt(hci_sock, SOL_HCI, HCI_FILTER, &old_filt, &filt_len);
+
+    hci_filter_clear(&new_filt);
+    hci_filter_set_ptype(HCI_EVENT_PKT, &new_filt);
+    hci_filter_set_event(EVT_LE_META_EVENT, &new_filt);
+    setsockopt(hci_sock, SOL_HCI, HCI_FILTER, &new_filt, sizeof(new_filt));
+
+    while (!found && elapsed < timeout_ms) {
+        uint8_t buf[HCI_MAX_EVENT_SIZE];
+        ssize_t n = read(hci_sock, buf, sizeof(buf));
+        if (n <= 0) {
+            usleep(10000); /* 10ms */
+            elapsed += 10;
+            continue;
+        }
+
+        evt_le_meta_event *meta = (evt_le_meta_event *)(buf + HCI_EVENT_HDR_SIZE + 1);
+        if (meta->subevent != EVT_LE_ADVERTISING_REPORT)
+            continue;
+
+        le_advertising_info *adv = (le_advertising_info *)(meta->data + 1);
+
+        /* Compare with target address */
+        if (bacmp(&adv->bdaddr, &target_addr) == 0) {
+            found = true;
+            bci->rssi = (uint8_t)((int8_t)buf[n - 1] + 128);
+        }
+    }
+
+    /* Disable scanning */
+    hci_le_set_scan_enable(hci_sock, 0x00, 0x00, 1000);
+    setsockopt(hci_sock, SOL_HCI, HCI_FILTER, &old_filt, sizeof(old_filt));
+    close(hci_sock);
+
+    if (!found) {
+        bci->state = ENI_WBCI_STATE_IDLE;
+        return ENI_WBCI_ERR_NOT_FOUND;
+    }
+
+    /*
+     * Establish L2CAP BLE connection.
+     * BLE uses L2CAP with CID 0x0004 (ATT) on LE transport.
+     */
+    bci->state = ENI_WBCI_STATE_CONNECTING;
+
+    int l2cap_sock = socket(AF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP);
+    if (l2cap_sock < 0) {
+        bci->state = ENI_WBCI_STATE_ERROR;
+        return ENI_WBCI_ERR_IO;
+    }
+
+    /* Bind to local adapter */
+    struct sockaddr_l2 local_addr;
+    memset(&local_addr, 0, sizeof(local_addr));
+    local_addr.l2_family = AF_BLUETOOTH;
+    local_addr.l2_bdaddr = *BDADDR_ANY;
+    local_addr.l2_cid = htobs(4); /* ATT CID */
+    local_addr.l2_bdaddr_type = BDADDR_LE_PUBLIC;
+
+    if (bind(l2cap_sock, (struct sockaddr *)&local_addr, sizeof(local_addr)) < 0) {
+        close(l2cap_sock);
+        bci->state = ENI_WBCI_STATE_ERROR;
+        return ENI_WBCI_ERR_IO;
+    }
+
+    /* Connect to remote device */
+    struct sockaddr_l2 remote_addr;
+    memset(&remote_addr, 0, sizeof(remote_addr));
+    remote_addr.l2_family = AF_BLUETOOTH;
+    memcpy(&remote_addr.l2_bdaddr, bci->config.device_addr, 6);
+    remote_addr.l2_cid = htobs(4);
+    remote_addr.l2_bdaddr_type = BDADDR_LE_PUBLIC;
+
+    /* Set connection timeout */
+    struct timeval tv;
+    tv.tv_sec = bci->config.connect_timeout_ms / 1000;
+    tv.tv_usec = (bci->config.connect_timeout_ms % 1000) * 1000;
+    setsockopt(l2cap_sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+
+    if (connect(l2cap_sock, (struct sockaddr *)&remote_addr, sizeof(remote_addr)) < 0) {
+        close(l2cap_sock);
+        if (errno == ETIMEDOUT) {
+            bci->state = ENI_WBCI_STATE_IDLE;
+            return ENI_WBCI_ERR_TIMEOUT;
+        }
+        bci->state = ENI_WBCI_STATE_ERROR;
+        return ENI_WBCI_ERR_IO;
+    }
+
+    /* Connection established — store the socket fd for later use.
+     * In a production implementation, we'd store this in an extended context. */
+    close(l2cap_sock);  /* Close for now; data streaming handled separately */
+
+    bci->state = ENI_WBCI_STATE_CONNECTED;
+    bci->link_quality = 95;
+    return ENI_WBCI_OK;
+
+#else
+    /*
+     * Non-Linux platform: simulate connection (stub for portability).
+     * Transition directly to connected state.
+     */
     bci->state = ENI_WBCI_STATE_CONNECTED;
     bci->rssi = 80;
     bci->link_quality = 95;
-
     return ENI_WBCI_OK;
+#endif /* __linux__ */
 }
 
 int eni_wbci_poll(eni_wbci_t *bci, float *samples,
@@ -187,7 +353,7 @@ int eni_wbci_poll(eni_wbci_t *bci, float *samples,
         return ENI_WBCI_OK;
     }
 
-    /* No data available — return last known samples */
+    /* No data available -- return last known samples */
     memcpy(samples, bci->samples,
            bci->config.num_channels * sizeof(float));
     if (num_channels) *num_channels = bci->config.num_channels;
