@@ -76,6 +76,9 @@ We hope this reference empowers you to build the next generation of neural-enabl
 
 ENI (Embedded Neural Interface) is a real-time neural, BCI, and assistive-input integration layer for the EoS embedded operating system. It provides a standardized, vendor-neutral framework to integrate brain-computer interfaces, neural decoders, and assistive input systems into embedded platforms.
 
+![Figure: eNI BCI Control Loop — brain signal decode, command mapping, and adaptive feedback](images/bci-control-loop.png)
+
+
 The framework handles the complete pipeline from raw neural signal acquisition through digital signal processing, feature extraction, neural network inference, intent decoding, and actuation — all within the deterministic timing constraints required by embedded and safety-critical systems.
 
 ## 1.2 Key Capabilities
@@ -677,6 +680,9 @@ device.disconnect()
 ## 7.1 Signal Simulator
 
 The simulator provider generates synthetic neural signals for testing without hardware. It supports configurable noise models, frequency injection, and intent simulation.
+
+![Figure: eNI Neural Signal Processing Pipeline — electrode capture to ML classification](images/signal-pipeline.png)
+
 
 ```c
 #include "eni/providers/simulator.h"
