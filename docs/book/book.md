@@ -4,6 +4,9 @@
 
 ## The Definitive Technical Reference
 
+![Figure: eNI System Architecture — from neural sensors through signal processing to BCI control](images/architecture.png)
+
+
 **Version 1.0**
 
 **Srikanth Patchava & EmbeddedOS Contributors**
