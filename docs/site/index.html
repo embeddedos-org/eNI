@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>eNI — Embedded Neural Interface | EmbeddedOS</title>
+  <meta name="description" content="Embedded Neural Interface for brain-computer interfaces. Neuralink 1024-channel adapter, EEG headset, DSP, neural network, intent decoder, neurofeedback.">
+  <meta name="keywords" content="neural interface, bci, brain computer interface, eeg, neuralink, dsp, neurofeedback">
+  <meta name="author" content="EmbeddedOS">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://embeddedos-org.github.io/eNI/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="eNI — Embedded Neural Interface | EmbeddedOS">
+  <meta property="og:description" content="Embedded Neural Interface for brain-computer interfaces. Neuralink 1024-channel adapter, EEG headset, DSP, neural network, intent decoder, neurofeedback.">
+  <meta property="og:url" content="https://embeddedos-org.github.io/eNI/">
+  <meta property="og:site_name" content="EmbeddedOS">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="eNI — Embedded Neural Interface | EmbeddedOS">
+  <meta name="twitter:description" content="Embedded Neural Interface for brain-computer interfaces. Neuralink 1024-channel adapter, EEG headset, DSP, neural network, intent decoder, neurofeedback.">
+  <link rel="stylesheet" href="style.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "eNI",
+    "description": "Embedded Neural Interface for brain-computer interfaces. Neuralink 1024-channel adapter, EEG headset, DSP, neural network, intent decoder, neurofeedback.",
+    "url": "https://embeddedos-org.github.io/eNI/",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "EmbeddedOS",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "author": { "@type": "Organization", "name": "EmbeddedOS", "url": "https://embeddedos-org.github.io/" }
+  }
+  </script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="https://embeddedos-org.github.io/" class="logo">
+        <div class="logo-icon">eOS</div>
+        EmbeddedOS
+      </a>
+      <div class="nav-links">
+        <a href="https://embeddedos-org.github.io/">Home</a>
+        <a href="#features" class="active">Docs</a>
+        <a href="https://github.com/embeddedos-org/eNI" target="_blank">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badges">
+        <span class="badge badge-pink">Neural Interface</span>
+        <span class="badge badge-blue">BCI</span>
+        <span class="badge badge-purple">DSP Pipeline</span>
+      </div>
+      <h1 style="background: linear-gradient(135deg, #f778ba, #ff9ed2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">eNI</h1>
+      <p class="subtitle">Embedded Neural Interface for brain-computer interfaces. Neuralink 1024-channel adapter, EEG headset, DSP, neural network, intent decoder, neurofeedback.</p>
+      <div class="hero-buttons">
+        <a href="https://github.com/embeddedos-org/eNI" class="btn btn-primary" target="_blank">Star on GitHub</a>
+        <a href="#quickstart" class="btn btn-outline">Quick Start</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="features">
+    <h2 class="section-title">Features</h2>
+    <p class="section-subtitle">Comprehensive neural interface toolkit for embedded systems</p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h3>Neuralink 1024-Channel Adapter</h3>
+        <p>High-density neural recording at 30kHz sampling rate with real-time streaming and artifact rejection.</p>
+      </div>
+      <div class="feature-card">
+        <h3>EEG Headset Provider</h3>
+        <p>Plug-and-play support for consumer and research-grade EEG headsets with standardized data pipelines.</p>
+      </div>
+      <div class="feature-card">
+        <h3>DSP Pipeline (FIR/IIR/FFT)</h3>
+        <p>Full digital signal processing with FIR/IIR filtering, FFT analysis, and real-time spectral decomposition.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Lightweight Neural Network</h3>
+        <p>Optimized inference engine for embedded deployment of neural decoding models with minimal memory footprint.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Intent Decoder</h3>
+        <p>Real-time brain signal classification for motor imagery, P300, and SSVEP paradigms with adaptive calibration.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Neurofeedback System</h3>
+        <p>Closed-loop neurofeedback with configurable protocols, real-time visualization, and session recording.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Stimulation with Safety Interlocks</h3>
+        <p>Hardware-gated electrical stimulation with multi-layer safety checks, charge balancing, and emergency shutoff.</p>
+      </div>
+      <div class="feature-card">
+        <h3>EIPC Bridge to EAI</h3>
+        <p>Seamless inter-process communication bridge connecting neural data streams to the EAI inference engine.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-alt" id="quickstart">
+    <h2 class="section-title">Quick Start</h2>
+    <p class="section-subtitle">Get up and running in seconds</p>
+    <pre><code>cmake -B build -DENI_PROVIDER=eeg_headset && cmake --build build</code></pre>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <a href="https://embeddedos-org.github.io/">EmbeddedOS</a>
+        <a href="https://embeddedos-org.github.io/eNI/">eNI</a>
+        <a href="https://embeddedos-org.github.io/EoSim/">EoSim</a>
+        <a href="https://embeddedos-org.github.io/EoStudio/">EoStudio</a>
+        <a href="https://embeddedos-org.github.io/eApps/">eApps</a>
+        <a href="https://embeddedos-org.github.io/eDB/">eDB</a>
+        <a href="https://embeddedos-org.github.io/eAI/">eAI</a>
+        <a href="https://embeddedos-org.github.io/eIPC/">eIPC</a>
+        <a href="https://embeddedos-org.github.io/eOffice/">eOffice</a>
+        <a href="https://embeddedos-org.github.io/eBrowser/">eBrowser</a>
+        <a href="https://embeddedos-org.github.io/eRide/">eRide</a>
+        <a href="https://embeddedos-org.github.io/eSocial/">eSocial</a>
+        <a href="https://embeddedos-org.github.io/eTrack/">eTrack</a>
+        <a href="https://embeddedos-org.github.io/eTravel/">eTravel</a>
+        <a href="https://embeddedos-org.github.io/eWallet/">eWallet</a>
+      </div>
+      <div class="footer-bottom">&copy; 2026 EmbeddedOS Organization. Open-source under MIT License.</div>
+    </div>
+  </footer>
+</body>
+</html>
