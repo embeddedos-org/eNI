@@ -20,9 +20,9 @@
 
 # Preface
 
-The Embedded Neural Interface (ENI) represents one of the most ambitious subsystems in the EmbeddedOS ecosystem: a standardized, vendor-neutral framework for integrating brain-computer interfaces (BCI), neural decoders, and assistive input systems into the EoS embedded operating system platform.
+The Embedded Neural Interface (ENI) represents one of the most ambitious subsystems in the EmbeddedOS ecosystem: a standardized, vendor-neutral framework for integrating brain-computer interfaces (BCI [@wolpaw2012]), neural decod [@georgopoulos1986]ers, and assistive input systems into the EoS embedded operating system platform.
 
-This reference book is intended for firmware engineers, neurotechnology researchers, BCI application developers, and systems architects who need to understand, configure, extend, or deploy the ENI framework. Whether you are connecting a Neuralink N1 implant, building an EEG-based assistive device, or simulating neural signals for test automation, this book provides the comprehensive technical depth required for production-grade work.
+This reference book is intended for firmware engineers, neurotechnology researchers, BCI application developers, and systems architects who need to understand, configure, extend, or deploy the ENI framework. Whether you are connecting a Neuralink [@neuralink2019] N1 implant, building an EEG [@sanei2013]-based assistive device, or simulating neural signals for test automation, this book provides the comprehensive technical depth required for production-grade work.
 
 ENI bridges the gap between cutting-edge neurotechnology hardware and deterministic, safety-critical embedded systems. It provides real-time signal acquisition from devices with up to 1024 channels at 30 kHz, a full digital signal processing pipeline, lightweight neural network inference, intent decoding, neurofeedback loops, and integration with the broader EoS AI and IPC subsystems.
 
@@ -1696,3 +1696,8 @@ ENI is part of the EoS ecosystem and aligns with international standards includi
 *ENI — Embedded Neural Interface Reference — Version 1.0 — April 2026*
 
 *Copyright (c) 2026 EmbeddedOS Organization. MIT License.*
+
+## References
+
+::: {#refs}
+:::
