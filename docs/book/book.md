@@ -74,6 +74,9 @@ We hope this reference empowers you to build the next generation of neural-enabl
 
 ## 1.1 What is ENI?
 
+
+![Figure: eNI — 3D Product Visualization](images/product-3d.png)
+
 ENI (Embedded Neural Interface) is a real-time neural, BCI, and assistive-input integration layer for the EoS embedded operating system. It provides a standardized, vendor-neutral framework to integrate brain-computer interfaces, neural decoders, and assistive input systems into embedded platforms.
 
 ![Figure: eNI BCI Control Loop — brain signal decode, command mapping, and adaptive feedback](images/bci-control-loop.png)
