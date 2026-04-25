@@ -4,6 +4,7 @@
 [![Nightly](https://github.com/embeddedos-org/eni/actions/workflows/nightly.yml/badge.svg)](https://github.com/embeddedos-org/eni/actions/workflows/nightly.yml)
 [![Release](https://github.com/embeddedos-org/eni/actions/workflows/release.yml/badge.svg)](https://github.com/embeddedos-org/eni/actions/workflows/release.yml)
 [![Version](https://img.shields.io/github/v/tag/embeddedos-org/eni?label=version)](https://github.com/embeddedos-org/eni/releases/latest)
+[![Book](https://github.com/embeddedos-org/eNI/actions/workflows/book-build.yml/badge.svg)](https://github.com/embeddedos-org/eNI/actions/workflows/book-build.yml)
 
 **Real-time neural, BCI, and assistive-input integration layer for EoS.**
 
