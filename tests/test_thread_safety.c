@@ -121,7 +121,8 @@ static void test_thread_create_join(void)
 static void test_stream_bus_threadsafe(void)
 {
     TEST(stream_bus_threadsafe);
-    eni_fw_stream_bus_t bus;
+    static eni_fw_stream_bus_t bus; /* static — too large for stack (~1.1MB) */
+    memset(&bus, 0, sizeof(bus));
     assert(eni_fw_stream_bus_init(&bus) == ENI_OK);
 
     /* Push/pop test */

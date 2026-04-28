@@ -6,6 +6,7 @@
 #define ENI_FORMAT_H
 
 #include "eni/data_format.h"
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {

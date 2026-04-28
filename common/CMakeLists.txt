@@ -11,6 +11,7 @@ add_library(eni_common STATIC
 
 target_include_directories(eni_common PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/platform/include
 )
 
 if(ENI_EIPC_ENABLED)

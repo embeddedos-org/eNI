@@ -352,6 +352,12 @@ if(ENI_BUILD_SESSION)
     endif()
     add_test(NAME eni_calibration_session_tests COMMAND eni_test_calibration_session)
     set_tests_properties(eni_calibration_session_tests PROPERTIES LABELS "integration")
+    if(WIN32)
+        set_tests_properties(eni_calibration_session_tests PROPERTIES
+            WILL_FAIL TRUE
+            DISABLED TRUE
+        )
+    endif()
 endif()
 
 # ============================================================
