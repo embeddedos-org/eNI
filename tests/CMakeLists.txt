@@ -360,6 +360,21 @@ if(ENI_BUILD_SESSION)
     endif()
 endif()
 
+# Minimal session debug test (always builds)
+if(ENI_BUILD_SESSION)
+    add_executable(eni_test_mini_session test_mini_session.c)
+    target_link_libraries(eni_test_mini_session PRIVATE eni_common eni_platform)
+    if(UNIX)
+        find_package(Threads REQUIRED)
+        target_link_libraries(eni_test_mini_session PRIVATE Threads::Threads)
+    endif()
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(eni_test_mini_session PRIVATE m)
+    endif()
+    add_test(NAME eni_mini_session_tests COMMAND eni_test_mini_session)
+    set_tests_properties(eni_mini_session_tests PROPERTIES LABELS "unit")
+endif()
+
 # ============================================================
 # Stress Tests: Concurrency & Multi-Device
 # ============================================================

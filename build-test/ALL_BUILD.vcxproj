@@ -1,0 +1,369 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ResolveNugetPackages>false</ResolveNugetPackages>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CD1D8A80-7768-3E0C-8DD1-051F8D388964}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>ALL_BUILD</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\home\spatchava\embeddedos-org\eNI\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/home/spatchava/embeddedos-org/eNI/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/home/spatchava/embeddedos-org/eNI -BC:/home/spatchava/embeddedos-org/eNI/build-test --check-stamp-file C:/home/spatchava/embeddedos-org/eNI/build-test/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\WindowsPaths.cmake;C:\home\spatchava\embeddedos-org\eNI\build-test\CMakeFiles\4.3.1\CMakeCCompiler.cmake;C:\home\spatchava\embeddedos-org\eNI\build-test\CMakeFiles\4.3.1\CMakeRCCompiler.cmake;C:\home\spatchava\embeddedos-org\eNI\build-test\CMakeFiles\4.3.1\CMakeSystem.cmake;C:\home\spatchava\embeddedos-org\eNI\cmake\coverage.cmake;C:\home\spatchava\embeddedos-org\eNI\cmake\memcheck.cmake;C:\home\spatchava\embeddedos-org\eNI\cmake\sanitizers.cmake;C:\home\spatchava\embeddedos-org\eNI\cmake\static-analysis.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\home\spatchava\embeddedos-org\eNI\build-test\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/home/spatchava/embeddedos-org/eNI/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/home/spatchava/embeddedos-org/eNI -BC:/home/spatchava/embeddedos-org/eNI/build-test --check-stamp-file C:/home/spatchava/embeddedos-org/eNI/build-test/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\WindowsPaths.cmake;C:\home\spatchava\embeddedos-org\eNI\build-test\CMakeFiles\4.3.1\CMakeCCompiler.cmake;C:\home\spatchava\embeddedos-org\eNI\build-test\CMakeFiles\4.3.1\CMakeRCCompiler.cmake;C:\home\spatchava\embeddedos-org\eNI\build-test\CMakeFiles\4.3.1\CMakeSystem.cmake;C:\home\spatchava\embeddedos-org\eNI\cmake\coverage.cmake;C:\home\spatchava\embeddedos-org\eNI\cmake\memcheck.cmake;C:\home\spatchava\embeddedos-org\eNI\cmake\sanitizers.cmake;C:\home\spatchava\embeddedos-org\eNI\cmake\static-analysis.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\home\spatchava\embeddedos-org\eNI\build-test\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/home/spatchava/embeddedos-org/eNI/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/home/spatchava/embeddedos-org/eNI -BC:/home/spatchava/embeddedos-org/eNI/build-test --check-stamp-file C:/home/spatchava/embeddedos-org/eNI/build-test/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\WindowsPaths.cmake;C:\home\spatchava\embeddedos-org\eNI\build-test\CMakeFiles\4.3.1\CMakeCCompiler.cmake;C:\home\spatchava\embeddedos-org\eNI\build-test\CMakeFiles\4.3.1\CMakeRCCompiler.cmake;C:\home\spatchava\embeddedos-org\eNI\build-test\CMakeFiles\4.3.1\CMakeSystem.cmake;C:\home\spatchava\embeddedos-org\eNI\cmake\coverage.cmake;C:\home\spatchava\embeddedos-org\eNI\cmake\memcheck.cmake;C:\home\spatchava\embeddedos-org\eNI\cmake\sanitizers.cmake;C:\home\spatchava\embeddedos-org\eNI\cmake\static-analysis.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\home\spatchava\embeddedos-org\eNI\build-test\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/home/spatchava/embeddedos-org/eNI/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/home/spatchava/embeddedos-org/eNI -BC:/home/spatchava/embeddedos-org/eNI/build-test --check-stamp-file C:/home/spatchava/embeddedos-org/eNI/build-test/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\WindowsPaths.cmake;C:\home\spatchava\embeddedos-org\eNI\build-test\CMakeFiles\4.3.1\CMakeCCompiler.cmake;C:\home\spatchava\embeddedos-org\eNI\build-test\CMakeFiles\4.3.1\CMakeRCCompiler.cmake;C:\home\spatchava\embeddedos-org\eNI\build-test\CMakeFiles\4.3.1\CMakeSystem.cmake;C:\home\spatchava\embeddedos-org\eNI\cmake\coverage.cmake;C:\home\spatchava\embeddedos-org\eNI\cmake\memcheck.cmake;C:\home\spatchava\embeddedos-org\eNI\cmake\sanitizers.cmake;C:\home\spatchava\embeddedos-org\eNI\cmake\static-analysis.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\home\spatchava\embeddedos-org\eNI\build-test\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\ZERO_CHECK.vcxproj">
+      <Project>{07D4364B-598A-3224-8418-0759739F52FE}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\cli\eni.vcxproj">
+      <Project>{B9F85922-0724-302A-AEC8-9954C8187453}</Project>
+      <Name>eni</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\common\eni_common.vcxproj">
+      <Project>{35D703C0-2997-3348-A80D-773D4E114FEF}</Project>
+      <Name>eni_common</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\framework\eni_framework.vcxproj">
+      <Project>{412B4437-EA6E-3735-A0D2-0513EC604D1B}</Project>
+      <Name>eni_framework</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\min\eni_min.vcxproj">
+      <Project>{03F241AE-DD99-335C-AAAA-E3ECCDFA6CA6}</Project>
+      <Name>eni_min</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\platform\eni_platform.vcxproj">
+      <Project>{3CB2D7ED-2EF8-3AC8-965B-38C0FC47D071}</Project>
+      <Name>eni_platform</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\providers\eni_providers.vcxproj">
+      <Project>{31A304CF-4BF0-3823-A6F8-8D792D554948}</Project>
+      <Name>eni_providers</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_bci_pipeline.vcxproj">
+      <Project>{641B0573-47B3-33CD-A4F9-B752703C5028}</Project>
+      <Name>eni_test_bci_pipeline</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_calibration_session.vcxproj">
+      <Project>{D509B8BD-BC2E-3A9D-8C66-CF0D62D6C521}</Project>
+      <Name>eni_test_calibration_session</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_common.vcxproj">
+      <Project>{5C91A7BD-D39E-36AB-9D48-D8E2B883D253}</Project>
+      <Name>eni_test_common</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_concurrent_stress.vcxproj">
+      <Project>{CF155DB0-B86D-31AB-BAC0-6B4959930524}</Project>
+      <Name>eni_test_concurrent_stress</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_config_extended.vcxproj">
+      <Project>{94131B9C-4DE1-3DDF-BCA9-D45330ACC518}</Project>
+      <Name>eni_test_config_extended</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_data_formats.vcxproj">
+      <Project>{6E2F0775-7A76-34B1-B3E1-2D0B986D9E77}</Project>
+      <Name>eni_test_data_formats</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_decoder.vcxproj">
+      <Project>{69DB658E-21C5-3C3A-A654-6FA61FDAFDCB}</Project>
+      <Name>eni_test_decoder</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_decoder_extended.vcxproj">
+      <Project>{69BBA716-286B-3040-8CE7-A87E9DF8C51F}</Project>
+      <Name>eni_test_decoder_extended</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_dsp.vcxproj">
+      <Project>{A550DE4F-794E-3226-9EDD-414F793CA1A7}</Project>
+      <Name>eni_test_dsp</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_dsp_extended.vcxproj">
+      <Project>{49594440-800E-3D05-A651-756C8CC39F24}</Project>
+      <Name>eni_test_dsp_extended</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_event.vcxproj">
+      <Project>{A9EB7703-9ACD-3F06-9379-F3260A731ECC}</Project>
+      <Name>eni_test_event</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_event_coverage.vcxproj">
+      <Project>{56CBE19F-730F-3090-AF86-F92406EDF598}</Project>
+      <Name>eni_test_event_coverage</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_event_feedback.vcxproj">
+      <Project>{7E984227-26ED-3C10-BED9-73500DF9B383}</Project>
+      <Name>eni_test_event_feedback</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_filter.vcxproj">
+      <Project>{DC2C66AC-AE5E-3FEE-B29A-C39B1764272F}</Project>
+      <Name>eni_test_filter</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_framework.vcxproj">
+      <Project>{E5839C8A-4125-306A-A7DB-14EA8FD52627}</Project>
+      <Name>eni_test_framework</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_full_pipeline.vcxproj">
+      <Project>{7E2884F1-BF93-3F8F-BAC8-AF7D9A34D51A}</Project>
+      <Name>eni_test_full_pipeline</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_fw_decoder.vcxproj">
+      <Project>{AB8DA7FF-6EB3-3EE2-A934-FD2FC67CA410}</Project>
+      <Name>eni_test_fw_decoder</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_fw_feedback.vcxproj">
+      <Project>{E9E76CA9-CE22-3DE9-B1CC-129B462A1807}</Project>
+      <Name>eni_test_fw_feedback</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_json.vcxproj">
+      <Project>{1C524A01-890D-398D-9611-B4C1FBD89100}</Project>
+      <Name>eni_test_json</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_log_coverage.vcxproj">
+      <Project>{482F95C4-5E1B-38DC-AFE6-23312B2C7387}</Project>
+      <Name>eni_test_log_coverage</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_min.vcxproj">
+      <Project>{D2AB6843-37E8-3B86-B9CF-EA2ABF681CAA}</Project>
+      <Name>eni_test_min</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_mini_session.vcxproj">
+      <Project>{0566C058-F5C7-3873-9131-3CFE59B4CB1A}</Project>
+      <Name>eni_test_mini_session</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_mocks.vcxproj">
+      <Project>{F7BB4F0A-1EA7-36E2-B413-12823C71F3BE}</Project>
+      <Name>eni_test_mocks</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_neuralink.vcxproj">
+      <Project>{274B782A-EE14-312B-84AB-CCB800C85767}</Project>
+      <Name>eni_test_neuralink</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_nn.vcxproj">
+      <Project>{26481E95-B0A1-33CD-8489-B1DAC26DE70C}</Project>
+      <Name>eni_test_nn</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_nn_extended.vcxproj">
+      <Project>{5CBED831-4441-3FD4-9EA4-565558900110}</Project>
+      <Name>eni_test_nn_extended</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_normalizer.vcxproj">
+      <Project>{197570A1-432D-3E20-B9F4-5E1B6883357A}</Project>
+      <Name>eni_test_normalizer</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_platform_extended.vcxproj">
+      <Project>{0D136FB4-7082-31FB-B2C9-D44AA6A3502A}</Project>
+      <Name>eni_test_platform_extended</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_policy.vcxproj">
+      <Project>{674971E3-C99C-3467-9CD1-4EF75A8DB6EB}</Project>
+      <Name>eni_test_policy</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_policy_coverage.vcxproj">
+      <Project>{1FBFB8DD-9C83-3798-A13E-202ED9C4895C}</Project>
+      <Name>eni_test_policy_coverage</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_provider_eeg.vcxproj">
+      <Project>{D5493E58-A9CB-3092-8C77-EC7056B1F3A0}</Project>
+      <Name>eni_test_provider_eeg</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_provider_lifecycle.vcxproj">
+      <Project>{9C249DE4-0E42-3F34-8CE0-79BE4754BFB5}</Project>
+      <Name>eni_test_provider_lifecycle</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_providers.vcxproj">
+      <Project>{87C1CD8E-F6B2-3B13-8B38-05ABA6780AE5}</Project>
+      <Name>eni_test_providers</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_session_calibration.vcxproj">
+      <Project>{0F960024-4011-3160-BB1F-F844FE85BD94}</Project>
+      <Name>eni_test_session_calibration</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_stim_safety.vcxproj">
+      <Project>{4B055B3B-267E-32F6-8002-0C75AEB0BFB2}</Project>
+      <Name>eni_test_stim_safety</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_stim_safety_coverage.vcxproj">
+      <Project>{A68BE401-EE29-3552-B5CE-21B0B69AFDE8}</Project>
+      <Name>eni_test_stim_safety_coverage</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_stim_safety_extended.vcxproj">
+      <Project>{D05528A3-EF8E-303D-8CF7-DB2C6BF2CF91}</Project>
+      <Name>eni_test_stim_safety_extended</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_stimulator.vcxproj">
+      <Project>{8EBE1DA4-84C8-3982-B86C-6BBCDF1E5FE6}</Project>
+      <Name>eni_test_stimulator</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_stream_bus_extended.vcxproj">
+      <Project>{3373E6FF-07C4-349D-BF1E-31169E8AD115}</Project>
+      <Name>eni_test_stream_bus_extended</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_thread_safety.vcxproj">
+      <Project>{284239A9-10E6-3D24-9CF2-395CD26A9320}</Project>
+      <Name>eni_test_thread_safety</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\home\spatchava\embeddedos-org\eNI\build-test\tests\eni_test_types_coverage.vcxproj">
+      <Project>{EC78EC8F-FEC6-3F12-82A5-3B5DD662ED98}</Project>
+      <Name>eni_test_types_coverage</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

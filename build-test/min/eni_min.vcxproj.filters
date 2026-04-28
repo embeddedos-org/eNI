@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\home\spatchava\embeddedos-org\eNI\min\src\input.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\home\spatchava\embeddedos-org\eNI\min\src\normalizer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\home\spatchava\embeddedos-org\eNI\min\src\filter.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\home\spatchava\embeddedos-org\eNI\min\src\mapper.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\home\spatchava\embeddedos-org\eNI\min\src\tool_bridge.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\home\spatchava\embeddedos-org\eNI\min\src\service.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\home\spatchava\embeddedos-org\eNI\min\src\signal_processor.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\home\spatchava\embeddedos-org\eNI\min\src\decoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\home\spatchava\embeddedos-org\eNI\min\src\feedback.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\home\spatchava\embeddedos-org\eNI\min\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{6929AAD6-F90D-3963-A015-523A93E25F8E}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

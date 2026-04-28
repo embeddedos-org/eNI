@@ -1,0 +1,14 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/home/spatchava/embeddedos-org/eNI/build-test/cmake_install.cmake",
+		"C:/home/spatchava/embeddedos-org/eNI/build-test/common/cmake_install.cmake",
+		"C:/home/spatchava/embeddedos-org/eNI/build-test/platform/cmake_install.cmake",
+		"C:/home/spatchava/embeddedos-org/eNI/build-test/providers/cmake_install.cmake",
+		"C:/home/spatchava/embeddedos-org/eNI/build-test/min/cmake_install.cmake",
+		"C:/home/spatchava/embeddedos-org/eNI/build-test/framework/cmake_install.cmake",
+		"C:/home/spatchava/embeddedos-org/eNI/build-test/cli/cmake_install.cmake",
+		"C:/home/spatchava/embeddedos-org/eNI/build-test/tests/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

@@ -1,0 +1,120 @@
+Start testing: Apr 28 12:36 Pacific Daylight Time
+----------------------------------------------------------
+23/39 Testing: eni_bci_pipeline_tests
+23/39 Test: eni_bci_pipeline_tests
+Command: "C:/home/spatchava/embeddedos-org/eNI/build-test/tests/Debug/eni_test_bci_pipeline.exe"
+Directory: C:/home/spatchava/embeddedos-org/eNI/build-test/tests
+"eni_bci_pipeline_tests" start time: Apr 28 12:36 Pacific Daylight Time
+Output:
+----------------------------------------------------------
+2026-04-28 12:36:53 [INFO] [stim.sim] stimulate: type=haptic ch=0 amp=0.50 dur=200 freq=50.0
+2026-04-28 12:36:53 [INFO] [stim.sim] stimulate: type=haptic ch=0 amp=0.30 dur=100 freq=0.0
+=== ENI BCI Pipeline Integration Tests ===
+[PASS] eeg_to_dsp
+[PASS] dsp_to_decoder
+[PASS] decoder_to_feedback
+[PASS] full_pipeline
+
+=== ALL 4 TESTS PASSED ===
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"eni_bci_pipeline_tests" end time: Apr 28 12:36 Pacific Daylight Time
+"eni_bci_pipeline_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+29/39 Testing: eni_full_pipeline_tests
+29/39 Test: eni_full_pipeline_tests
+Command: "C:/home/spatchava/embeddedos-org/eNI/build-test/tests/Debug/eni_test_full_pipeline.exe"
+Directory: C:/home/spatchava/embeddedos-org/eNI/build-test/tests
+"eni_full_pipeline_tests" start time: Apr 28 12:36 Pacific Daylight Time
+Output:
+----------------------------------------------------------
+2026-04-28 12:36:53 [INFO] [simulator] initialized (interval=500 ms)
+2026-04-28 12:36:53 [INFO] [simulator] started
+2026-04-28 12:36:53 [INFO] [provider] started: pipe_sim
+2026-04-28 12:36:53 [INFO] [simulator] stopped
+2026-04-28 12:36:53 [INFO] [provider] stopped: pipe_sim
+2026-04-28 12:36:53 [INFO] [simulator] shutdown
+2026-04-28 12:36:53 [INFO] [provider] shutdown: pipe_sim
+2026-04-28 12:36:53 [INFO] [simulator] initialized (interval=500 ms)
+2026-04-28 12:36:53 [INFO] [simulator] started
+2026-04-28 12:36:53 [INFO] [provider] started: full_pipe
+2026-04-28 12:36:53 [INFO] [simulator] stopped
+2026-04-28 12:36:53 [INFO] [provider] stopped: full_pipe
+2026-04-28 12:36:53 [INFO] [simulator] shutdown
+2026-04-28 12:36:53 [INFO] [provider] shutdown: full_pipe
+=== ENI Full Pipeline Integration Tests ===
+[PASS] pipeline_provider_to_dsp
+[PASS] pipeline_dsp_to_decoder
+[PASS] pipeline_decoder_to_event
+[PASS] pipeline_safety_check
+[PASS] pipeline_full_signal_to_intent
+[PASS] pipeline_epoch_accumulation
+[PASS] pipeline_multi_epoch_decode
+[PASS] pipeline_config_driven
+[PASS] pipeline_artifact_rejection
+
+=== ALL 9 TESTS PASSED ===
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"eni_full_pipeline_tests" end time: Apr 28 12:36 Pacific Daylight Time
+"eni_full_pipeline_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+38/39 Testing: eni_calibration_session_tests
+38/39 Test: eni_calibration_session_tests
+Command: ""
+Directory: C:/home/spatchava/embeddedos-org/eNI/build-test/tests
+"eni_calibration_session_tests" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_calibration_session_tests" end time: Apr 28 12:36 Pacific Daylight Time
+"eni_calibration_session_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+39/39 Testing: eni_concurrent_stress_tests
+39/39 Test: eni_concurrent_stress_tests
+Command: "C:/home/spatchava/embeddedos-org/eNI/build-test/tests/Debug/eni_test_concurrent_stress.exe"
+Directory: C:/home/spatchava/embeddedos-org/eNI/build-test/tests
+"eni_concurrent_stress_tests" start time: Apr 28 12:36 Pacific Daylight Time
+Output:
+----------------------------------------------------------
+=== Stress Tests: Multi-Device Sync & Concurrent Calibration ===
+
+  STRESS multidevice_sync_workflow                      [PASS]
+  STRESS multidevice_concurrent_access                  [PASS]
+  STRESS concurrent_calibration                         [PASS]
+  STRESS stream_bus_producer_consumer_stress            [PASS]
+  STRESS mempool_concurrent_alloc_free                  [PASS]
+  STRESS device_rapid_connect_disconnect_cycle          [PASS]
+  STRESS calibration_high_freq_sample_injection         [PASS]
+
+── Summary ─────────────────────────────────────────────
+  Total:  7
+  Passed: 7
+  Failed: 0
+─────────────────────────────────────────────────────────
+
+=== ALL 7 STRESS TESTS PASSED ===
+<end of output>
+Test time =   1.65 sec
+----------------------------------------------------------
+Test Passed.
+"eni_concurrent_stress_tests" end time: Apr 28 12:36 Pacific Daylight Time
+"eni_concurrent_stress_tests" time elapsed: 00:00:01
+----------------------------------------------------------
+
+End testing: Apr 28 12:36 Pacific Daylight Time
+
+integration =   0.04 sec*proc
+
+stress =   1.65 sec*proc
+

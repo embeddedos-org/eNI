@@ -1,0 +1,5 @@
+C:\home\spatchava\embeddedos-org\eNI\providers\simulator\simulator.c;C:\home\spatchava\embeddedos-org\eNI\build-test\providers\eni_providers.dir\Debug\simulator.obj
+C:\home\spatchava\embeddedos-org\eNI\providers\generic\generic.c;C:\home\spatchava\embeddedos-org\eNI\build-test\providers\eni_providers.dir\Debug\generic.obj
+C:\home\spatchava\embeddedos-org\eNI\providers\neuralink\neuralink.c;C:\home\spatchava\embeddedos-org\eNI\build-test\providers\eni_providers.dir\Debug\neuralink.obj
+C:\home\spatchava\embeddedos-org\eNI\providers\eeg\eeg.c;C:\home\spatchava\embeddedos-org\eNI\build-test\providers\eni_providers.dir\Debug\eeg.obj
+C:\home\spatchava\embeddedos-org\eNI\providers\stimulator_sim\stimulator_sim.c;C:\home\spatchava\embeddedos-org\eNI\build-test\providers\eni_providers.dir\Debug\stimulator_sim.obj

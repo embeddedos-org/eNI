@@ -1,0 +1,10 @@
+^C:\HOME\SPATCHAVA\EMBEDDEDOS-ORG\ENI\BUILD-TEST\CMAKEFILES\357BAA32026120DDBE10A9B849676B42\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/home/spatchava/embeddedos-org/eNI -BC:/home/spatchava/embeddedos-org/eNI/build-test --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/home/spatchava/embeddedos-org/eNI/build-test/ENI.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

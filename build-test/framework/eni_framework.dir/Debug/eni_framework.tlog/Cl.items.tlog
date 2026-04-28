@@ -1,0 +1,11 @@
+C:\home\spatchava\embeddedos-org\eNI\framework\src\provider_manager.c;C:\home\spatchava\embeddedos-org\eNI\build-test\framework\eni_framework.dir\Debug\provider_manager.obj
+C:\home\spatchava\embeddedos-org\eNI\framework\src\stream_bus.c;C:\home\spatchava\embeddedos-org\eNI\build-test\framework\eni_framework.dir\Debug\stream_bus.obj
+C:\home\spatchava\embeddedos-org\eNI\framework\src\router.c;C:\home\spatchava\embeddedos-org\eNI\build-test\framework\eni_framework.dir\Debug\router.obj
+C:\home\spatchava\embeddedos-org\eNI\framework\src\orchestrator.c;C:\home\spatchava\embeddedos-org\eNI\build-test\framework\eni_framework.dir\Debug\orchestrator.obj
+C:\home\spatchava\embeddedos-org\eNI\framework\src\connectors.c;C:\home\spatchava\embeddedos-org\eNI\build-test\framework\eni_framework.dir\Debug\connectors.obj
+C:\home\spatchava\embeddedos-org\eNI\framework\src\observability.c;C:\home\spatchava\embeddedos-org\eNI\build-test\framework\eni_framework.dir\Debug\observability.obj
+C:\home\spatchava\embeddedos-org\eNI\framework\src\service.c;C:\home\spatchava\embeddedos-org\eNI\build-test\framework\eni_framework.dir\Debug\service.obj
+C:\home\spatchava\embeddedos-org\eNI\framework\src\health.c;C:\home\spatchava\embeddedos-org\eNI\build-test\framework\eni_framework.dir\Debug\health.obj
+C:\home\spatchava\embeddedos-org\eNI\framework\src\signal_processor.c;C:\home\spatchava\embeddedos-org\eNI\build-test\framework\eni_framework.dir\Debug\signal_processor.obj
+C:\home\spatchava\embeddedos-org\eNI\framework\src\decoder.c;C:\home\spatchava\embeddedos-org\eNI\build-test\framework\eni_framework.dir\Debug\decoder.obj
+C:\home\spatchava\embeddedos-org\eNI\framework\src\feedback.c;C:\home\spatchava\embeddedos-org\eNI\build-test\framework\eni_framework.dir\Debug\feedback.obj

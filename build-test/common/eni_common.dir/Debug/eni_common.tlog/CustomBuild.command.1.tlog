@@ -1,0 +1,10 @@
+^C:\HOME\SPATCHAVA\EMBEDDEDOS-ORG\ENI\COMMON\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/home/spatchava/embeddedos-org/eNI -BC:/home/spatchava/embeddedos-org/eNI/build-test --check-stamp-file C:/home/spatchava/embeddedos-org/eNI/build-test/common/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

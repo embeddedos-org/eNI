@@ -1,0 +1,14 @@
+{
+  "user_id": "e2e-subject-001",
+  "name": "E2E Test Subject",
+  "device_id": "sim-eeg-001",
+  "num_channels": 8,
+  "decoder_model": "",
+  "num_classes": 4,
+  "confidence_threshold": 0.8500,
+  "total_sessions": 1,
+  "total_time_ms": 123,
+  "channel_gains": [0.028274,0.028207,0.028223,0.028300,0.027523,0.028274,0.028251,0.028246],
+  "channel_offsets": [-3.287746,-3.104333,-2.881640,-2.676329,-2.532357,-2.471056,-2.488245,-2.558664],
+  "impedance_baseline": [12.00,15.00,8.00,20.00,11.00,14.00,9.00,18.00]
+}

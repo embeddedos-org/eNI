@@ -1,0 +1,31 @@
+# CMake generation dependency list for this directory.
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeCInformation.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeCommonLanguageInclude.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeGenericSystem.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeInitializeConfigs.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeLanguageInformation.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeRCInformation.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeSystemSpecificInformation.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeSystemSpecificInitialize.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Compiler/CMakeCommonCompilerMacros.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Compiler/MSVC-C.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Compiler/MSVC.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Internal/CMakeCLinkerInformation.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Internal/CMakeCommonLinkerInformation.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Linker/MSVC-C.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Linker/MSVC.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Platform/Linker/Windows-MSVC-C.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Platform/Linker/Windows-MSVC.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Platform/Windows-Initialize.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Platform/Windows-MSVC-C.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Platform/Windows-MSVC.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Platform/Windows.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Platform/WindowsPaths.cmake
+C:/home/spatchava/embeddedos-org/eNI/CMakeLists.txt
+C:/home/spatchava/embeddedos-org/eNI/build-test/CMakeFiles/4.3.1/CMakeCCompiler.cmake
+C:/home/spatchava/embeddedos-org/eNI/build-test/CMakeFiles/4.3.1/CMakeRCCompiler.cmake
+C:/home/spatchava/embeddedos-org/eNI/build-test/CMakeFiles/4.3.1/CMakeSystem.cmake
+C:/home/spatchava/embeddedos-org/eNI/cmake/coverage.cmake
+C:/home/spatchava/embeddedos-org/eNI/cmake/memcheck.cmake
+C:/home/spatchava/embeddedos-org/eNI/cmake/sanitizers.cmake
+C:/home/spatchava/embeddedos-org/eNI/cmake/static-analysis.cmake

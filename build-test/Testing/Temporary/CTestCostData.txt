@@ -1,0 +1,7 @@
+eni_bci_pipeline_tests 4 0.00523975
+eni_full_pipeline_tests 4 0.00488982
+eni_calibration_session_tests 0 0
+eni_concurrent_stress_tests 2 0.823077
+eni_thread_safety_tests 0 0
+eni_platform_extended_tests 0 0
+---

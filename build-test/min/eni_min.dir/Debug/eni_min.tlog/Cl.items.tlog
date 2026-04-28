@@ -1,0 +1,9 @@
+C:\home\spatchava\embeddedos-org\eNI\min\src\input.c;C:\home\spatchava\embeddedos-org\eNI\build-test\min\eni_min.dir\Debug\input.obj
+C:\home\spatchava\embeddedos-org\eNI\min\src\normalizer.c;C:\home\spatchava\embeddedos-org\eNI\build-test\min\eni_min.dir\Debug\normalizer.obj
+C:\home\spatchava\embeddedos-org\eNI\min\src\filter.c;C:\home\spatchava\embeddedos-org\eNI\build-test\min\eni_min.dir\Debug\filter.obj
+C:\home\spatchava\embeddedos-org\eNI\min\src\mapper.c;C:\home\spatchava\embeddedos-org\eNI\build-test\min\eni_min.dir\Debug\mapper.obj
+C:\home\spatchava\embeddedos-org\eNI\min\src\tool_bridge.c;C:\home\spatchava\embeddedos-org\eNI\build-test\min\eni_min.dir\Debug\tool_bridge.obj
+C:\home\spatchava\embeddedos-org\eNI\min\src\service.c;C:\home\spatchava\embeddedos-org\eNI\build-test\min\eni_min.dir\Debug\service.obj
+C:\home\spatchava\embeddedos-org\eNI\min\src\signal_processor.c;C:\home\spatchava\embeddedos-org\eNI\build-test\min\eni_min.dir\Debug\signal_processor.obj
+C:\home\spatchava\embeddedos-org\eNI\min\src\decoder.c;C:\home\spatchava\embeddedos-org\eNI\build-test\min\eni_min.dir\Debug\decoder.obj
+C:\home\spatchava\embeddedos-org\eNI\min\src\feedback.c;C:\home\spatchava\embeddedos-org\eNI\build-test\min\eni_min.dir\Debug\feedback.obj
