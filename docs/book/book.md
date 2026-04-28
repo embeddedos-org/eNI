@@ -1,11 +1,17 @@
 ---
+title: "eNI — Official Reference Guide"
+author: "Srikanth Patchava & EmbeddedOS Contributors"
+date: "April 2026"
+version: "v1.0.0"
+bibliography: references.bib
+csl: ieee.csl
+titlepage: true
+titlepage-background: "cover.png"
+---
 
 # ENI — Embedded Neural Interface
 
 ## The Definitive Technical Reference
-
-![Figure: eNI System Architecture — from neural sensors through signal processing to BCI control](images/architecture.png)
-
 
 **Version 1.0**
 
@@ -23,9 +29,9 @@
 
 # Preface
 
-The Embedded Neural Interface (ENI) represents one of the most ambitious subsystems in the EmbeddedOS ecosystem: a standardized, vendor-neutral framework for integrating brain-computer interfaces (BCI [@wolpaw2012]), neural decod [@georgopoulos1986]ers, and assistive input systems into the EoS embedded operating system platform.
+The Embedded Neural Interface (ENI) represents one of the most ambitious subsystems in the EmbeddedOS ecosystem: a standardized, vendor-neutral framework for integrating brain-computer interfaces (BCI), neural decoders, and assistive input systems into the EoS embedded operating system platform.
 
-This reference book is intended for firmware engineers, neurotechnology researchers, BCI application developers, and systems architects who need to understand, configure, extend, or deploy the ENI framework. Whether you are connecting a Neuralink [@neuralink2019] N1 implant, building an EEG [@sanei2013]-based assistive device, or simulating neural signals for test automation, this book provides the comprehensive technical depth required for production-grade work.
+This reference book is intended for firmware engineers, neurotechnology researchers, BCI application developers, and systems architects who need to understand, configure, extend, or deploy the ENI framework. Whether you are connecting a Neuralink N1 implant, building an EEG-based assistive device, or simulating neural signals for test automation, this book provides the comprehensive technical depth required for production-grade work.
 
 ENI bridges the gap between cutting-edge neurotechnology hardware and deterministic, safety-critical embedded systems. It provides real-time signal acquisition from devices with up to 1024 channels at 30 kHz, a full digital signal processing pipeline, lightweight neural network inference, intent decoding, neurofeedback loops, and integration with the broader EoS AI and IPC subsystems.
 
@@ -74,13 +80,7 @@ We hope this reference empowers you to build the next generation of neural-enabl
 
 ## 1.1 What is ENI?
 
-
-![Figure: eNI — 3D Product Visualization](images/product-3d.png)
-
-ENI (Embedded Neural Interface) is a real-time neural, BCI, and assistive-input integration layer for the EoS embedded operating system. It provides a standardized, vendor-neutral framework to integrate brain-computer interfaces, neural decoders, and assistive input systems into embedded platforms.
-
-![Figure: eNI BCI Control Loop — brain signal decode, command mapping, and adaptive feedback](images/bci-control-loop.png)
-
+ENI (Embedded Neural Interface) is a real-time neural, BCI, and assistive-input integration layer for the EoS embedded operating system [@wolpaw2012]. It provides a standardized, vendor-neutral framework to integrate brain-computer interfaces, neural decoders, and assistive input systems into embedded platforms.
 
 The framework handles the complete pipeline from raw neural signal acquisition through digital signal processing, feature extraction, neural network inference, intent decoding, and actuation — all within the deterministic timing constraints required by embedded and safety-critical systems.
 
@@ -458,7 +458,7 @@ eni_provider_register(&mydevice_ops);
 
 ## 5.1 Overview
 
-The Neuralink provider enables direct integration with Neuralink N1 brain-computer interface implants. It supports:
+The Neuralink provider enables direct integration with Neuralink N1 brain-computer interface implants [@neuralink2019]. It supports:
 
 - **1024 electrode channels** at 30 kHz sample rate
 - **Packet-based streaming** with callback support
@@ -684,9 +684,6 @@ device.disconnect()
 
 The simulator provider generates synthetic neural signals for testing without hardware. It supports configurable noise models, frequency injection, and intent simulation.
 
-![Figure: eNI Neural Signal Processing Pipeline — electrode capture to ML classification](images/signal-pipeline.png)
-
-
 ```c
 #include "eni/providers/simulator.h"
 
@@ -746,7 +743,7 @@ eni_stimulator_sim_output(&waveform);
 
 ## 8.1 Overview
 
-The ENI DSP pipeline provides the signal conditioning and feature extraction stages between raw neural signal acquisition and intent classification. All DSP operations are defined in `eni/dsp.h`.
+The ENI DSP pipeline provides the signal conditioning and feature extraction stages between raw neural signal acquisition and intent classification [@sanei2013]. All DSP operations are defined in `eni/dsp.h`.
 
 ## 8.2 FIR Filters
 
@@ -863,7 +860,7 @@ eni_dsp_pipeline_process(&pipeline, raw_samples, sample_count, &result);
 
 ## 9.1 Overview
 
-ENI includes a lightweight neural network inference engine optimized for embedded deployment. The engine supports dense (fully connected) layers with common activation functions, enabling real-time classification of neural signal features.
+ENI includes a lightweight neural network inference engine optimized for embedded deployment [@kandel2021]. The engine supports dense (fully connected) layers with common activation functions, enabling real-time classification of neural signal features.
 
 ## 9.2 Supported Layers and Activations
 

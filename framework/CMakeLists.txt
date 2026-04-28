@@ -6,6 +6,7 @@ add_library(eni_framework STATIC
     src/connectors.c
     src/observability.c
     src/service.c
+    src/health.c
 )
 
 if(ENI_BUILD_DSP)
@@ -24,4 +25,4 @@ target_include_directories(eni_framework PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(eni_framework PUBLIC eni_common eni_min)
+target_link_libraries(eni_framework PUBLIC eni_common eni_min eni_platform)

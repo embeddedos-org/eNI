@@ -6,6 +6,11 @@
 #define ENI_FW_STREAM_BUS_H
 
 #include "eni/common.h"
+#include "eni_platform/platform.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define ENI_FW_STREAM_BUS_CAPACITY 256
 
@@ -16,13 +21,22 @@ typedef struct {
     int         count;
     uint64_t    total_enqueued;
     uint64_t    total_dropped;
+    eni_mutex_t lock;
+    eni_condvar_t not_empty;
+    bool        initialized;
 } eni_fw_stream_bus_t;
 
 eni_status_t eni_fw_stream_bus_init(eni_fw_stream_bus_t *bus);
 eni_status_t eni_fw_stream_bus_push(eni_fw_stream_bus_t *bus, const eni_event_t *ev);
 eni_status_t eni_fw_stream_bus_pop(eni_fw_stream_bus_t *bus, eni_event_t *ev);
+eni_status_t eni_fw_stream_bus_pop_wait(eni_fw_stream_bus_t *bus, eni_event_t *ev, uint32_t timeout_ms);
 int          eni_fw_stream_bus_pending(const eni_fw_stream_bus_t *bus);
 bool         eni_fw_stream_bus_empty(const eni_fw_stream_bus_t *bus);
 void         eni_fw_stream_bus_stats(const eni_fw_stream_bus_t *bus);
+void         eni_fw_stream_bus_destroy(eni_fw_stream_bus_t *bus);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ENI_FW_STREAM_BUS_H */

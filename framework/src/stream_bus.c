@@ -11,15 +11,29 @@ eni_status_t eni_fw_stream_bus_init(eni_fw_stream_bus_t *bus)
 {
     if (!bus) return ENI_ERR_INVALID;
     memset(bus, 0, sizeof(*bus));
+
+    eni_status_t rc = eni_mutex_init(&bus->lock);
+    if (rc != ENI_OK) return rc;
+
+    rc = eni_condvar_init(&bus->not_empty);
+    if (rc != ENI_OK) {
+        eni_mutex_destroy(&bus->lock);
+        return rc;
+    }
+
+    bus->initialized = true;
     return ENI_OK;
 }
 
 eni_status_t eni_fw_stream_bus_push(eni_fw_stream_bus_t *bus, const eni_event_t *ev)
 {
-    if (!bus || !ev) return ENI_ERR_INVALID;
+    if (!bus || !bus->initialized || !ev) return ENI_ERR_INVALID;
+
+    eni_mutex_lock(&bus->lock);
 
     if (bus->count >= ENI_FW_STREAM_BUS_CAPACITY) {
         bus->total_dropped++;
+        eni_mutex_unlock(&bus->lock);
         ENI_LOG_WARN("fw.bus", "event dropped (bus full, total_dropped=%llu)",
                      (unsigned long long)bus->total_dropped);
         return ENI_ERR_OVERFLOW;
@@ -30,14 +44,20 @@ eni_status_t eni_fw_stream_bus_push(eni_fw_stream_bus_t *bus, const eni_event_t 
     bus->count++;
     bus->total_enqueued++;
 
+    eni_condvar_signal(&bus->not_empty);
+    eni_mutex_unlock(&bus->lock);
+
     return ENI_OK;
 }
 
 eni_status_t eni_fw_stream_bus_pop(eni_fw_stream_bus_t *bus, eni_event_t *ev)
 {
-    if (!bus || !ev) return ENI_ERR_INVALID;
+    if (!bus || !bus->initialized || !ev) return ENI_ERR_INVALID;
+
+    eni_mutex_lock(&bus->lock);
 
     if (bus->count == 0) {
+        eni_mutex_unlock(&bus->lock);
         return ENI_ERR_TIMEOUT;
     }
 
@@ -45,24 +65,61 @@ eni_status_t eni_fw_stream_bus_pop(eni_fw_stream_bus_t *bus, eni_event_t *ev)
     bus->head = (bus->head + 1) % ENI_FW_STREAM_BUS_CAPACITY;
     bus->count--;
 
+    eni_mutex_unlock(&bus->lock);
+    return ENI_OK;
+}
+
+eni_status_t eni_fw_stream_bus_pop_wait(eni_fw_stream_bus_t *bus, eni_event_t *ev, uint32_t timeout_ms)
+{
+    if (!bus || !bus->initialized || !ev) return ENI_ERR_INVALID;
+
+    eni_mutex_lock(&bus->lock);
+
+    while (bus->count == 0) {
+        eni_status_t rc = eni_condvar_timedwait(&bus->not_empty, &bus->lock, timeout_ms);
+        if (rc == ENI_ERR_TIMEOUT) {
+            eni_mutex_unlock(&bus->lock);
+            return ENI_ERR_TIMEOUT;
+        }
+        if (rc != ENI_OK) {
+            eni_mutex_unlock(&bus->lock);
+            return rc;
+        }
+    }
+
+    memcpy(ev, &bus->events[bus->head], sizeof(*ev));
+    bus->head = (bus->head + 1) % ENI_FW_STREAM_BUS_CAPACITY;
+    bus->count--;
+
+    eni_mutex_unlock(&bus->lock);
     return ENI_OK;
 }
 
 int eni_fw_stream_bus_pending(const eni_fw_stream_bus_t *bus)
 {
-    return bus ? bus->count : 0;
+    if (!bus || !bus->initialized) return 0;
+    /* Reading count is atomic-enough for informational purposes */
+    return bus->count;
 }
 
 bool eni_fw_stream_bus_empty(const eni_fw_stream_bus_t *bus)
 {
-    return !bus || bus->count == 0;
+    return !bus || !bus->initialized || bus->count == 0;
 }
 
 void eni_fw_stream_bus_stats(const eni_fw_stream_bus_t *bus)
 {
-    if (!bus) return;
+    if (!bus || !bus->initialized) return;
     printf("[stream_bus] pending=%d enqueued=%llu dropped=%llu\n",
            bus->count,
            (unsigned long long)bus->total_enqueued,
            (unsigned long long)bus->total_dropped);
+}
+
+void eni_fw_stream_bus_destroy(eni_fw_stream_bus_t *bus)
+{
+    if (!bus || !bus->initialized) return;
+    eni_condvar_destroy(&bus->not_empty);
+    eni_mutex_destroy(&bus->lock);
+    bus->initialized = false;
 }

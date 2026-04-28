@@ -1,251 +1,159 @@
-# 🧠 ENI — Embedded Neural Interface
+# eNI — Embedded Neural Interface Framework
 
-[![CI](https://github.com/embeddedos-org/eni/actions/workflows/ci.yml/badge.svg)](https://github.com/embeddedos-org/eni/actions/workflows/ci.yml)
-[![Nightly](https://github.com/embeddedos-org/eni/actions/workflows/nightly.yml/badge.svg)](https://github.com/embeddedos-org/eni/actions/workflows/nightly.yml)
-[![Release](https://github.com/embeddedos-org/eni/actions/workflows/release.yml/badge.svg)](https://github.com/embeddedos-org/eni/actions/workflows/release.yml)
-[![Version](https://img.shields.io/github/v/tag/embeddedos-org/eni?label=version)](https://github.com/embeddedos-org/eni/releases/latest)
-[![Book](https://github.com/embeddedos-org/eNI/actions/workflows/book-build.yml/badge.svg)](https://github.com/embeddedos-org/eNI/actions/workflows/book-build.yml)
+> **World-class, cross-platform, production-ready neural interface framework in C11**
 
-**Real-time neural, BCI, and assistive-input integration layer for EoS.**
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![C11](https://img.shields.io/badge/C-C11-brightgreen.svg)](https://en.wikipedia.org/wiki/C11_(C_standard_revision))
 
-ENI provides a standardized, vendor-neutral framework to integrate brain-computer interfaces (BCI), neural decoders, and assistive input systems into the EoS embedded OS platform.
+eNI is a modular, real-time neural interface framework designed for brain-computer interface (BCI) applications. It provides everything needed to build production-grade neural interfaces — from raw signal acquisition to decoded intents and closed-loop neurofeedback.
 
----
+## Key Features
 
-## ⚡ Quick Start
+- **Multi-channel signal processing** — Up to 256 channels with pluggable filter chains, artifact rejection, and full DSP pipeline
+- **Neural decoding** — Ensemble decoders with model hot-swap, confidence smoothing, and temporal consistency
+- **Closed-loop neurofeedback** — Adaptive feedback with safety-checked stimulation and intensity modulation
+- **Neural data formats** — Read/write EDF+, BDF+, XDF, and native ENI format; annotation system
+- **Session management** — Full lifecycle state machine with calibration pipeline and user profiles
+- **Thread-safe architecture** — Platform-abstracted mutexes, condition variables, atomics, and threads
+- **Cross-platform** — Linux, macOS, Windows, POSIX, EoS (embedded)
+- **Zero external dependencies** — Pure C11 core; optional integrations gated by CMake
+- **Production hardening** — Health monitoring, watchdog, memory pools, error recovery with exponential backoff
+- **Multi-language SDKs** — C (native), Python, Rust, Java/Android, Node.js
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Applications / SDKs                   │
+│  Python │ Rust │ Java │ Node.js │ CLI │ GUI              │
+├─────────────────────────────────────────────────────────┤
+│                   ENI Framework Layer                    │
+│  Signal Processor │ Decoder │ Feedback │ Stream Bus      │
+│  Orchestrator │ Router │ Service │ Health Monitor        │
+├─────────────────────────────────────────────────────────┤
+│                     ENI Min Layer                        │
+│  Filter │ Normalizer │ Mapper │ Decoder │ Feedback       │
+├─────────────────────────────────────────────────────────┤
+│                    Common Libraries                      │
+│  DSP │ NN │ Events │ Config │ JSON │ Logging │ Policy    │
+│  Data Formats │ Session │ Calibration │ Recovery │ Pool  │
+├─────────────────────────────────────────────────────────┤
+│                   Platform Abstraction                   │
+│  Linux │ macOS │ Windows │ POSIX │ EoS (embedded)       │
+│  Threading │ Atomics │ Time │ Sleep                      │
+└─────────────────────────────────────────────────────────┘
+```
+
+## Quick Start
+
+### Building
 
 ```bash
-git clone https://github.com/embeddedos-org/eni.git
-cd eni
-
-# Build (minimal + framework + neuralink)
-cmake -B build -DENI_BUILD_TESTS=ON
+# Linux
+cmake -B build -DENI_BUILD_DSP=ON -DENI_BUILD_DECODER=ON \
+      -DENI_BUILD_STIMULATOR=ON -DENI_BUILD_DATA_FORMATS=ON \
+      -DENI_BUILD_SESSION=ON -DENI_BUILD_TESTS=ON
 cmake --build build
 
-# Minimal only (MCU targets)
-cmake -B build -DENI_BUILD_MIN=ON -DENI_BUILD_FRAMEWORK=OFF
+# Run tests
+ctest --test-dir build --output-on-failure
 
-# Without Neuralink
-cmake -B build -DENI_PROVIDER_NEURALINK=OFF
+# macOS
+cmake -B build -DENI_PLATFORM_MACOS=ON ...
 
-# With EIPC integration
-cmake -B build -DENI_EIPC_ENABLED=ON
-
-# Cross-compile for ARM
-cmake -B build-arm -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_SYSTEM_NAME=Linux
-cmake --build build-arm
+# Windows
+cmake -B build -DENI_PLATFORM_WINDOWS=ON ...
 ```
 
----
-
-## 🏗 Architecture
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│                    ENI Neural Interface                        │
-│                                                                │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐│
-│  │   Neuralink   │  │  Simulator   │  │  Generic / Custom    ││
-│  │  1024ch 30kHz │  │  Test data   │  │  Vendor-agnostic     ││
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────────────┘│
-│         │                  │                  │                │
-│  ┌──────▼──────────────────▼──────────────────▼───────────┐   │
-│  │              Provider Framework                         │   │
-│  │         eni_provider_ops_t (init/read/deinit)          │   │
-│  └──────────────────────┬─────────────────────────────────┘   │
-│                         │                                      │
-│  ┌──────────────────────▼─────────────────────────────────┐   │
-│  │              Common Layer                               │   │
-│  │  Events · Policy · Config · Logging · EIPC Bridge       │   │
-│  │  DSP · Neural Net · Decoder · Feedback · Stimulator     │   │
-│  └──────────────────────┬─────────────────────────────────┘   │
-│                         │                                      │
-│  ┌─────────────┐  ┌────▼────────┐                             │
-│  │  ENI-Min    │  │ ENI-Framework│                             │
-│  │  (MCU)      │  │ (App Proc)   │                             │
-│  │  filter     │  │ connectors   │                             │
-│  │  normalizer │  │ pipeline     │                             │
-│  │  mapper     │  │ orchestrator │                             │
-│  │  tool bridge│  │              │                             │
-│  └─────────────┘  └─────────────┘                             │
-│         │                  │                                   │
-│  ┌──────▼──────────────────▼──────────────────────────────┐   │
-│  │              EIPC Bridge → EAI Agent                    │   │
-│  │         Neural intents → AI tool calls                  │   │
-│  └────────────────────────────────────────────────────────┘   │
-└──────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 🔧 Configurations
-
-| Config | Option | Description |
-|---|---|---|
-| **Minimal** | `ENI_BUILD_MIN=ON` | Lightweight runtime for resource-constrained MCUs. Input normalization, signal filtering, event mapping, tool bridge. Minimal RAM footprint. |
-| **Framework** | `ENI_BUILD_FRAMEWORK=ON` | Full industrial platform with connectors, pipeline orchestration, advanced signal processing. For application processors (RPi, i.MX8M, x86). |
-
-Both configurations share the common library (events, providers, policy, DSP, neural net, decoder, feedback, EIPC bridge).
-
----
-
-## 🧬 Neuralink Support
-
-ENI includes a **Neuralink adapter** (`providers/neuralink/`) that provides:
-
-- **1024-channel electrode support** at 30kHz sampling rate
-- **4 operating modes**: raw data, decoded signals, intent classification, motor output
-- **Signal processing**: bandpass filter (0.5–300Hz), 60Hz notch filter, baseline calibration
-- **Intent decoder**: classifies neural energy into `idle`, `attention`, `motor_intent`, `motor_execute`
-- **Calibration**: automatic baseline computation over configurable duration
-- **Streaming API**: packet-based data acquisition with callback support
+### Minimal C Example
 
 ```c
-#include "neuralink.h"
+#include "eni/common.h"
+#include "eni/session.h"
+#include "eni_fw/signal_processor.h"
+#include "eni_fw/decoder.h"
 
-eni_nl_config_t cfg = {
-    .mode = ENI_NL_MODE_INTENT,
-    .channels = 256,
-    .sample_rate = 30000,
-    .filter_enabled = 1,
-    .bandpass_low_hz = 0.5f,
-    .bandpass_high_hz = 300.0f,
-    .auto_calibrate = 1,
-    .on_intent = my_intent_handler,
-};
+int main(void) {
+    // Initialize session
+    eni_session_t session;
+    eni_session_init(&session);
+    eni_session_set_subject(&session, "user-001");
+    eni_session_start(&session);
 
-eni_neuralink_init(&cfg);
-eni_neuralink_connect("neuralink-n1-001");
-eni_neuralink_calibrate(5000);
-eni_neuralink_start_stream();
+    // Set up signal processor (8 channels, 256-sample epochs, 512 Hz)
+    eni_fw_signal_processor_t sp;
+    eni_fw_signal_processor_init(&sp, 8, 256, 512, 100.0f);
 
-while (running) {
-    eni_nl_packet_t pkt;
-    eni_neuralink_read_packet(&pkt);
-    char intent[32];
-    float confidence;
-    eni_neuralink_decode_intent(&pkt, intent, sizeof(intent), &confidence);
+    // Add bandpass filter (1-40 Hz)
+    eni_fw_filter_config_t filter = {
+        .type = ENI_FW_FILTER_BANDPASS,
+        .low_hz = 1.0f,
+        .high_hz = 40.0f,
+    };
+    eni_fw_signal_processor_add_filter(&sp, &filter);
+
+    // Process samples and extract features...
+    // ...
+
+    eni_fw_signal_processor_shutdown(&sp);
+    eni_session_stop(&session);
+    eni_session_destroy(&session);
+    return 0;
 }
 ```
 
----
+### Python Example
 
-## 🔌 Providers
+```python
+from eni.data_formats import read_edf, write_edf
 
-| Provider | Description | Status |
-|---|---|---|
-| **neuralink** | Neuralink BCI adapter — 1024 channels, intent decoding, calibration | ✅ Implemented |
-| **eeg** | EEG headset provider — multi-channel EEG with FFT band-power analysis | ✅ Implemented |
-| **simulator** | BCI signal simulator for testing without hardware | ✅ Implemented |
-| **stimulator_sim** | Stimulation output simulator with safety interlocks | ✅ Implemented |
-| **generic** | Generic neural signal decoder — vendor-agnostic | ✅ Implemented |
+# Read an EDF+ file
+header, records, annotations = read_edf("recording.edf")
+print(f"Channels: {header.num_channels}, Records: {header.num_records}")
 
-New adapters can be added by implementing the `eni_provider_ops_t` interface:
-
-```c
-typedef struct {
-    const char *name;
-    int  (*init)(void *ctx);
-    int  (*read)(void *ctx, void *buf, int len);
-    void (*deinit)(void *ctx);
-} eni_provider_ops_t;
+# Process data...
 ```
 
----
-
-## 🧪 Common Layer Services
-
-| Module | Header | Description |
-|---|---|---|
-| **DSP** | `eni/dsp.h` | Digital signal processing — FIR/IIR filters, FFT, power spectral density |
-| **Neural Net** | `eni/nn.h` | Lightweight neural network — dense layers, ReLU, softmax, inference |
-| **Decoder** | `eni/decoder.h` | Intent decoder — feature extraction, classification, confidence scoring |
-| **Feedback** | `eni/feedback.h` | Haptic/visual/audio neurofeedback — closed-loop BCI training |
-| **Stimulator** | `eni/stimulator.h` | Electrical stimulation output — waveform generation, charge balancing |
-| **Stim Safety** | `eni/stim_safety.h` | Stimulation safety — charge limits, impedance checks, emergency stop |
-| **Events** | `eni/event.h` | Event system — neural events, state changes, error notifications |
-| **Config** | `eni/config.h` | Configuration management — profiles, runtime tuning |
-
----
-
-## 📂 Repository Structure
+## Project Structure
 
 ```
-eni/
-├── common/                   # Shared library
-│   ├── include/eni/          #   Types, events, config, DSP, NN, decoder, feedback
-│   └── src/                  #   Implementation
-├── min/                      # Minimal runtime (MCU targets)
-│   ├── include/eni_min/      #   Signal processor, decoder, feedback, service
-│   └── src/                  #   Lightweight implementations
-├── framework/                # Full framework (app processors)
-│   ├── include/eni_fw/       #   Signal processor, decoder, feedback
-│   └── src/                  #   Advanced implementations
-├── providers/                # Hardware adapters
-│   ├── neuralink/            #   Neuralink 1024-channel BCI
-│   ├── eeg/                  #   EEG headset provider
-│   ├── simulator/            #   Signal simulator
-│   └── stimulator_sim/       #   Stimulation simulator
-├── cli/                      # CLI tool (main.c)
-├── tests/                    # Unit tests (7 test suites)
-└── CMakeLists.txt            # Build configuration
+eNI/
+├── common/          # Shared libraries (DSP, NN, events, config, data formats)
+├── framework/       # Full framework (signal processor, decoder, feedback, health)
+├── min/             # Minimal layer (lightweight BCI pipeline)
+├── platform/        # Platform abstraction (Linux, macOS, Windows, POSIX, EoS)
+├── providers/       # Data providers (simulator, EEG, LSL)
+├── bindings/        # Language bindings (Python, Rust, Java)
+├── sdk/             # SDKs (Node.js)
+├── tests/           # Comprehensive test suite
+├── docs/            # Documentation
+├── cli/             # Command-line tools
+├── gui/             # GUI applications
+└── tools/           # Development tools
 ```
 
----
+## Supported Data Formats
 
-## 🧪 Tests
+| Format | Read | Write | Description |
+|--------|------|-------|-------------|
+| EDF+   | ✅   | ✅    | European Data Format — standard for EEG/PSG |
+| BDF+   | ✅   | ✅    | BioSemi 24-bit format |
+| XDF    | ✅   | ✅    | Extensible Data Format — multi-stream with clock sync |
+| ENI    | ✅   | ✅    | Native format — optimized for real-time streaming |
 
-```bash
-cmake -B build -DENI_BUILD_TESTS=ON
-cmake --build build
-ctest --test-dir build --output-on-failure
-```
+## Calibration Pipeline
 
-| Test | Covers |
-|---|---|
-| `test_dsp` | FIR/IIR filters, FFT, spectral analysis |
-| `test_nn` | Dense layers, activations, forward pass |
-| `test_decoder` | Feature extraction, intent classification |
-| `test_provider_eeg` | EEG provider init, channel read, band power |
-| `test_stimulator` | Waveform generation, charge balancing |
-| `test_stim_safety` | Charge limits, impedance checks, emergency stop |
-| `test_bci_pipeline` | End-to-end BCI pipeline (acquire → process → classify → act) |
-| `test_event_feedback` | Event dispatch, feedback loop |
+eNI includes a 4-stage auto-calibration pipeline:
 
----
+1. **Impedance Check** — Verify electrode contact quality
+2. **Baseline Recording** — 30-second resting state (eyes open/closed)
+3. **Threshold Computation** — Percentile-based per-channel thresholds
+4. **Validation** — Accuracy test with real-time classification
 
-## 🚀 CI/CD
-
-| Workflow | Schedule | Coverage |
-|----------|----------|----------|
-| **CI** | Every push/PR | Build matrix (Linux × Windows × macOS) + tests |
-| **Nightly** | 2:00 AM UTC daily | Full build + test + cross-compile + regression report |
-| **Weekly** | Monday 6:00 AM UTC | Comprehensive build + dependency audit |
-| **EoSim Sanity** | 4:00 AM UTC daily | EoSim install validation (3 OS × 3 Python) + simulation |
-| **Simulation Test** | 3:00 AM UTC daily | QEMU/EoSim platform simulation |
-| **Release** | Tag `v*.*.*` | Validate → cross-compile → GitHub Release with artifacts |
-
----
-
-## Related Projects
-
-| Project | Repository | Purpose |
-|---|---|---|
-| **eos** | [embeddedos-org/eos](https://github.com/embeddedos-org/eos) | Embedded OS — HAL, RTOS kernel, services |
-| **eai** | [embeddedos-org/eai](https://github.com/embeddedos-org/eai) | AI layer — receives ENI intents via EIPC |
-| **eipc** | [embeddedos-org/eipc](https://github.com/embeddedos-org/eipc) | IPC transport between ENI and EAI |
-| **eboot** | [embeddedos-org/eboot](https://github.com/embeddedos-org/eboot) | Bootloader — secure boot, A/B slots |
-| **ebuild** | [embeddedos-org/ebuild](https://github.com/embeddedos-org/ebuild) | Build system — SDK generator, packaging |
-| **eosim** | [embeddedos-org/eosim](https://github.com/embeddedos-org/eosim) | Multi-architecture simulator |
-
-## Standards Compliance
-
-This project is part of the EoS ecosystem and aligns with international standards including ISO/IEC/IEEE 15288:2023, ISO/IEC 12207, ISO/IEC/IEEE 42010, ISO/IEC 25000, ISO/IEC 25010, ISO/IEC 27001, ISO/IEC 15408, IEC 61508, ISO 26262, DO-178C, FIPS 140-3, POSIX (IEEE 1003), WCAG 2.1, and more. See the [EoS Compliance Documentation](https://github.com/embeddedos-org/.github/tree/master/docs/compliance) for full details.
-
-## 📜 License
+## License
 
 MIT License — see [LICENSE](LICENSE) for details.
 
+## Contributing
 
----
-Part of the [EmbeddedOS Organization](https://embeddedos-org.github.io).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.

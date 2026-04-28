@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 EoS Project
+
+[package]
+name = "eni"
+version = "0.2.0"
+edition = "2021"
+description = "Rust bindings for the eNI embedded Neural Interface library"
+license = "MIT"
+
+[build-dependencies]
+cc = "1"

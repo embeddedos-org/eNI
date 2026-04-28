@@ -78,6 +78,63 @@ if(ENI_PROVIDER_EEG)
     set_tests_properties(eni_provider_eeg_tests PROPERTIES LABELS "unit")
 endif()
 
+# ============================================================
+# Coverage Improvement Tests
+# ============================================================
+
+# test_fw_decoder: Decoder (energy + nn) tests
+if(ENI_BUILD_DECODER)
+    add_executable(eni_test_fw_decoder test_fw_decoder.c)
+    target_link_libraries(eni_test_fw_decoder PRIVATE eni_common)
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(eni_test_fw_decoder PRIVATE m)
+    endif()
+    add_test(NAME eni_fw_decoder_tests COMMAND eni_test_fw_decoder)
+    set_tests_properties(eni_fw_decoder_tests PROPERTIES LABELS "unit")
+endif()
+
+# test_fw_feedback: Feedback controller tests
+if(ENI_BUILD_STIMULATOR)
+    add_executable(eni_test_fw_feedback test_fw_feedback.c)
+    target_link_libraries(eni_test_fw_feedback PRIVATE eni_common)
+    add_test(NAME eni_fw_feedback_tests COMMAND eni_test_fw_feedback)
+    set_tests_properties(eni_fw_feedback_tests PROPERTIES LABELS "unit")
+endif()
+
+# test_config_extended: Config loading (KV, JSON, new keys)
+add_executable(eni_test_config_extended test_config_extended.c)
+target_link_libraries(eni_test_config_extended PRIVATE eni_common)
+add_test(NAME eni_config_extended_tests COMMAND eni_test_config_extended)
+set_tests_properties(eni_config_extended_tests PROPERTIES LABELS "unit")
+
+# test_stream_bus_extended: Stream bus overflow, pop_wait, stats
+add_executable(eni_test_stream_bus_extended test_stream_bus_extended.c)
+target_link_libraries(eni_test_stream_bus_extended PRIVATE eni_common eni_framework eni_platform)
+if(UNIX)
+    find_package(Threads REQUIRED)
+    target_link_libraries(eni_test_stream_bus_extended PRIVATE Threads::Threads)
+endif()
+add_test(NAME eni_stream_bus_extended_tests COMMAND eni_test_stream_bus_extended)
+set_tests_properties(eni_stream_bus_extended_tests PROPERTIES LABELS "unit")
+
+# test_stim_safety_coverage: Stim safety extended coverage
+if(ENI_BUILD_STIMULATOR)
+    add_executable(eni_test_stim_safety_coverage test_stim_safety_coverage.c)
+    target_link_libraries(eni_test_stim_safety_coverage PRIVATE eni_common)
+    add_test(NAME eni_stim_safety_coverage_tests COMMAND eni_test_stim_safety_coverage)
+    set_tests_properties(eni_stim_safety_coverage_tests PROPERTIES LABELS "unit")
+endif()
+
+# test_platform_extended: Platform threading, condvar, atomics
+add_executable(eni_test_platform_extended test_platform_extended.c)
+target_link_libraries(eni_test_platform_extended PRIVATE eni_common eni_platform)
+if(UNIX)
+    find_package(Threads REQUIRED)
+    target_link_libraries(eni_test_platform_extended PRIVATE Threads::Threads)
+endif()
+add_test(NAME eni_platform_extended_tests COMMAND eni_test_platform_extended)
+set_tests_properties(eni_platform_extended_tests PROPERTIES LABELS "unit")
+
 # test_dsp: DSP signal processing
 if(ENI_BUILD_DSP)
     add_executable(eni_test_dsp test_dsp.c)
@@ -206,4 +263,115 @@ if(ENI_BUILD_DSP AND ENI_BUILD_DECODER AND ENI_BUILD_STIMULATOR)
     endif()
     add_test(NAME eni_full_pipeline_tests COMMAND eni_test_full_pipeline)
     set_tests_properties(eni_full_pipeline_tests PROPERTIES LABELS "integration")
+endif()
+
+# ============================================================
+# Phase 7: World-Class Upgrade Tests
+# ============================================================
+
+# JSON parser tests
+add_executable(eni_test_json test_json.c)
+target_link_libraries(eni_test_json PRIVATE eni_common)
+add_test(NAME eni_json_tests COMMAND eni_test_json)
+set_tests_properties(eni_json_tests PROPERTIES LABELS "unit")
+
+# Thread safety tests
+add_executable(eni_test_thread_safety test_thread_safety.c)
+target_link_libraries(eni_test_thread_safety PRIVATE eni_common eni_framework eni_platform)
+if(UNIX)
+    find_package(Threads REQUIRED)
+    target_link_libraries(eni_test_thread_safety PRIVATE Threads::Threads)
+endif()
+add_test(NAME eni_thread_safety_tests COMMAND eni_test_thread_safety)
+set_tests_properties(eni_thread_safety_tests PROPERTIES LABELS "unit")
+
+# Data format tests (EDF+, BDF+, XDF, annotations)
+if(ENI_BUILD_DATA_FORMATS)
+    add_executable(eni_test_data_formats test_data_formats.c)
+    target_link_libraries(eni_test_data_formats PRIVATE eni_common eni_platform)
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(eni_test_data_formats PRIVATE m)
+    endif()
+    add_test(NAME eni_data_format_tests COMMAND eni_test_data_formats)
+    set_tests_properties(eni_data_format_tests PROPERTIES LABELS "unit")
+endif()
+
+# Session, calibration, profile tests
+if(ENI_BUILD_SESSION)
+    add_executable(eni_test_session_calibration test_session_calibration.c)
+    target_link_libraries(eni_test_session_calibration PRIVATE eni_common eni_platform)
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(eni_test_session_calibration PRIVATE m)
+    endif()
+    add_test(NAME eni_session_calibration_tests COMMAND eni_test_session_calibration)
+    set_tests_properties(eni_session_calibration_tests PROPERTIES LABELS "unit")
+endif()
+
+# ============================================================
+# Coverage Gap Tests — types.c, log.c, event.c, policy.c
+# ============================================================
+
+# types.c: all eni_status_str branches + eni_timestamp_now
+add_executable(eni_test_types_coverage test_types_coverage.c)
+target_link_libraries(eni_test_types_coverage PRIVATE eni_common)
+add_test(NAME eni_types_coverage_tests COMMAND eni_test_types_coverage)
+set_tests_properties(eni_types_coverage_tests PROPERTIES LABELS "unit")
+
+# log.c: all log levels, filtering, output redirect, null module
+add_executable(eni_test_log_coverage test_log_coverage.c)
+target_link_libraries(eni_test_log_coverage PRIVATE eni_common)
+add_test(NAME eni_log_coverage_tests COMMAND eni_test_log_coverage)
+set_tests_properties(eni_log_coverage_tests PROPERTIES LABELS "unit")
+
+# event.c: eni_event_print all branches, overflow, null/long inputs
+add_executable(eni_test_event_coverage test_event_coverage.c)
+target_link_libraries(eni_test_event_coverage PRIVATE eni_common)
+add_test(NAME eni_event_coverage_tests COMMAND eni_test_event_coverage)
+set_tests_properties(eni_event_coverage_tests PROPERTIES LABELS "unit")
+
+# policy.c: eni_policy_dump all branches, overflow, long action, null guards
+add_executable(eni_test_policy_coverage test_policy_coverage.c)
+target_link_libraries(eni_test_policy_coverage PRIVATE eni_common)
+add_test(NAME eni_policy_coverage_tests COMMAND eni_test_policy_coverage)
+set_tests_properties(eni_policy_coverage_tests PROPERTIES LABELS "unit")
+
+# ============================================================
+# Integration Tests: End-to-End Workflows
+# ============================================================
+
+# Calibration + Session lifecycle integration test
+if(ENI_BUILD_SESSION)
+    add_executable(eni_test_calibration_session integration/test_calibration_session.c)
+    target_link_libraries(eni_test_calibration_session PRIVATE eni_common eni_platform)
+    if(UNIX)
+        find_package(Threads REQUIRED)
+        target_link_libraries(eni_test_calibration_session PRIVATE Threads::Threads)
+    endif()
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(eni_test_calibration_session PRIVATE m)
+    endif()
+    add_test(NAME eni_calibration_session_tests COMMAND eni_test_calibration_session)
+    set_tests_properties(eni_calibration_session_tests PROPERTIES LABELS "integration")
+endif()
+
+# ============================================================
+# Stress Tests: Concurrency & Multi-Device
+# ============================================================
+
+# Multi-device sync, concurrent calibration, thread contention
+if(ENI_BUILD_SESSION)
+    add_executable(eni_test_concurrent_stress stress/test_concurrent_stress.c)
+    target_link_libraries(eni_test_concurrent_stress PRIVATE eni_common eni_framework eni_platform)
+    if(UNIX)
+        find_package(Threads REQUIRED)
+        target_link_libraries(eni_test_concurrent_stress PRIVATE Threads::Threads)
+    endif()
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(eni_test_concurrent_stress PRIVATE m)
+    endif()
+    add_test(NAME eni_concurrent_stress_tests COMMAND eni_test_concurrent_stress)
+    set_tests_properties(eni_concurrent_stress_tests PROPERTIES
+        LABELS "stress"
+        TIMEOUT 120
+    )
 endif()
