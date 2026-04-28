@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 project(ENI
-    VERSION 0.1.0
+    VERSION 0.3.0
     DESCRIPTION "Neural Interface Adapter — BCI/sensor input integration for EoS AI Layer"
     LANGUAGES C
 )
@@ -24,8 +24,8 @@ option(ENI_BUILD_DSP       "Build DSP signal processing module"      ON)
 option(ENI_BUILD_DECODER   "Build neural decoder module"             ON)
 option(ENI_BUILD_NN        "Build neural network inference engine"    ON)
 option(ENI_BUILD_STIMULATOR "Build stimulator/feedback subsystem"    ON)
-option(ENI_BUILD_DATA_FORMATS "Build neural data format I/O (EDF+/BDF+/XDF/ENI)" OFF)
-option(ENI_BUILD_SESSION    "Build session management and calibration" OFF)
+option(ENI_BUILD_DATA_FORMATS "Build neural data format I/O (EDF+/BDF+/XDF/ENI)" ON)
+option(ENI_BUILD_SESSION     "Build session management and calibration"         ON)
 
 option(ENI_BUILD_SIM         "Build simulation environment"          OFF)
 option(ENI_BUILD_BINDINGS_CPP "Build C++ bindings"                   OFF)
@@ -93,6 +93,8 @@ message(STATUS "  Decoder:       ${ENI_BUILD_DECODER}")
 message(STATUS "  NN:            ${ENI_BUILD_NN}")
 message(STATUS "  ONNX:          ${ENI_ONNX_ENABLED}")
 message(STATUS "  Stimulator:    ${ENI_BUILD_STIMULATOR}")
+message(STATUS "  Data Formats:  ${ENI_BUILD_DATA_FORMATS}")
+message(STATUS "  Session/Cal:   ${ENI_BUILD_SESSION}")
 message(STATUS "  Simulation:    ${ENI_BUILD_SIM}")
 message(STATUS "  C++ Bindings:  ${ENI_BUILD_BINDINGS_CPP}")
 message(STATUS "  TFLite Micro:  ${ENI_BUILD_TFLITE}")
