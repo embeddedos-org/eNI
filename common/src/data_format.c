@@ -7,7 +7,7 @@
 
 eni_data_format_t eni_data_format_detect(const uint8_t *data, size_t len)
 {
-    if (!data || len < 8) return ENI_FORMAT_UNKNOWN;
+    if (!data || len < 4) return ENI_FORMAT_UNKNOWN;
 
     /* EDF: first byte is 0x30 ('0') — "0       " version field */
     if (data[0] == '0' && len >= 256) return ENI_FORMAT_EDF;
