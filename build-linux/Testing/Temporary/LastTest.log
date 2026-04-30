@@ -1,0 +1,1214 @@
+Start testing: Apr 28 13:28 PDT
+----------------------------------------------------------
+1/40 Testing: eni_common_tests
+1/40 Test: eni_common_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_common"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_common_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== ENI Unit Tests ===
+
+  TEST event_init                               [PASS]
+  TEST event_set_intent                         [PASS]
+  TEST event_add_feature                        [PASS]
+  TEST event_set_raw                            [PASS]
+  TEST event_type_mismatch                      [PASS]
+  TEST policy_allow_deny                        [PASS]
+  TEST tool_registry                            [PASS]
+  TEST config_defaults                          [PASS]
+  TEST status_strings                           [PASS]
+
+=== Results: 9/9 passed, 0 failed ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_common_tests" end time: Apr 28 13:28 PDT
+"eni_common_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/40 Testing: eni_min_tests
+2/40 Test: eni_min_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_min"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_min_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+2026-04-28 13:28:48 [WARN] [min.mapper] no mapping for intent: unknown_intent
+=== ENI Min Variant Tests ===
+  [TEST] filter_init ... PASS
+  [TEST] filter_accept_high_confidence ... PASS
+  [TEST] filter_reject_low_confidence ... PASS
+  [TEST] mapper_add_and_resolve ... PASS
+  [TEST] mapper_resolve_unknown ... PASS
+  [TEST] normalizer_passthrough ... PASS
+
+Results: 6/6 passed
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_min_tests" end time: Apr 28 13:28 PDT
+"eni_min_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/40 Testing: eni_framework_tests
+3/40 Test: eni_framework_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_framework"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_framework_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== ENI Framework Tests ===
+
+  TEST stream_bus_empty                         [PASS]
+  TEST stream_bus_push_pop                      [PASS]
+  TEST router_classify                          [PASS]
+
+=== Results: 3/3 passed, 0 failed ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_framework_tests" end time: Apr 28 13:28 PDT
+"eni_framework_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/40 Testing: eni_provider_tests
+4/40 Test: eni_provider_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_providers"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_provider_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+2026-04-28 13:28:48 [INFO] [simulator] initialized (interval=500 ms)
+=== ENI Provider Tests ===
+
+  TEST simulator_ops_exist                      [PASS]
+  TEST provider_init                            [PASS]
+
+=== Results: 2/2 passed, 0 failed ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_provider_tests" end time: Apr 28 13:28 PDT
+"eni_provider_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/40 Testing: eni_event_tests
+5/40 Test: eni_event_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_event"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_event_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== eni Event System Tests ===
+[PASS] event_init_intent
+[PASS] event_init_null
+[PASS] event_set_intent
+[PASS] event_set_intent_wrong_type
+[PASS] event_add_feature
+[PASS] event_add_multiple_features
+[PASS] event_set_raw
+[PASS] event_type_enum
+[PASS] event_constants
+
+=== ALL 9 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_event_tests" end time: Apr 28 13:28 PDT
+"eni_event_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/40 Testing: eni_policy_tests
+6/40 Test: eni_policy_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_policy"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_policy_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== eni Policy Engine Tests ===
+[PASS] policy_init
+[PASS] policy_init_null
+[PASS] policy_add_rule
+[PASS] policy_add_multiple_rules
+[PASS] policy_evaluate_allow
+[PASS] policy_evaluate_deny
+[PASS] policy_evaluate_confirm
+[PASS] policy_default_allow
+[PASS] policy_default_deny
+[PASS] policy_constants
+[PASS] action_class_enum
+
+=== ALL 11 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_policy_tests" end time: Apr 28 13:28 PDT
+"eni_policy_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/40 Testing: eni_neuralink_tests
+7/40 Test: eni_neuralink_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_neuralink"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_neuralink_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== eni Neuralink Provider Tests ===
+[PASS] init
+[PASS] init_null
+[PASS] connect
+[PASS] connect_empty_addr
+[PASS] disconnect
+[PASS] read_packet
+[PASS] read_packet_disconnected
+[PASS] decode_intent
+[PASS] calibrate
+[PASS] set_threshold
+[PASS] get_status
+[PASS] constants
+[PASS] mode_enum
+[PASS] deinit
+
+=== ALL 14 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_neuralink_tests" end time: Apr 28 13:28 PDT
+"eni_neuralink_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/40 Testing: eni_filter_tests
+8/40 Test: eni_filter_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_filter"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_filter_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== eni Min Filter Tests ===
+[PASS] filter_init
+[PASS] filter_init_null
+[PASS] filter_accept_high_confidence
+[PASS] filter_reject_low_confidence
+[PASS] filter_debounce
+[PASS] filter_different_intents_no_debounce
+[PASS] filter_pass_non_intent
+
+=== ALL 7 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_filter_tests" end time: Apr 28 13:28 PDT
+"eni_filter_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/40 Testing: eni_normalizer_tests
+9/40 Test: eni_normalizer_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_normalizer"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_normalizer_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== eni Min Normalizer Tests ===
+[PASS] normalizer_init
+[PASS] normalizer_init_null
+[PASS] normalizer_process_intent
+[PASS] normalizer_clamp_confidence
+[PASS] normalizer_clamp_negative
+[PASS] normalizer_process_null
+[PASS] mode_enum
+
+=== ALL 7 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_normalizer_tests" end time: Apr 28 13:28 PDT
+"eni_normalizer_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/40 Testing: eni_event_feedback_tests
+10/40 Test: eni_event_feedback_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_event_feedback"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_event_feedback_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== ENI Event Feedback Tests ===
+[PASS] feedback_event_type
+[PASS] feedback_payload_init
+[PASS] feedback_union_access
+[PASS] stim_type_enum_values
+[PASS] feedback_all_stim_types
+
+=== ALL 5 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_event_feedback_tests" end time: Apr 28 13:28 PDT
+"eni_event_feedback_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/40 Testing: eni_provider_eeg_tests
+11/40 Test: eni_provider_eeg_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_provider_eeg"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_provider_eeg_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== ENI EEG Provider Tests ===
+[PASS] eeg_init
+[PASS] eeg_init_null
+[PASS] eeg_connect
+[PASS] eeg_read_packet
+[PASS] eeg_impedance
+[PASS] eeg_calibrate
+[PASS] eeg_montage
+[PASS] eeg_provider_vtable
+
+=== ALL 8 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_provider_eeg_tests" end time: Apr 28 13:28 PDT
+"eni_provider_eeg_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/40 Testing: eni_fw_decoder_tests
+12/40 Test: eni_fw_decoder_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_fw_decoder"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_fw_decoder_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== ENI Decoder Tests ===
+
+  TEST energy_decoder_init                      [PASS]
+  TEST energy_decode_high_energy                [PASS]
+  TEST energy_decode_low_energy                 [PASS]
+  TEST energy_decode_medium_energy              [PASS]
+  TEST nn_decoder_init                          [PASS]
+  TEST nn_decode_heuristic                      [PASS]
+  TEST decoder_invalid_args                     [PASS]
+  TEST decoder_shutdown_idempotent              [PASS]
+
+=== Results: 8/8 passed, 0 failed ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_fw_decoder_tests" end time: Apr 28 13:28 PDT
+"eni_fw_decoder_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+13/40 Testing: eni_fw_feedback_tests
+13/40 Test: eni_fw_feedback_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_fw_feedback"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_fw_feedback_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== ENI Feedback Controller Tests ===
+
+  TEST feedback_init                            [PASS]
+  TEST feedback_init_null                       [PASS]
+  TEST feedback_add_rule                        [PASS]
+  TEST feedback_add_rule_invalid                [PASS]
+  TEST feedback_evaluate_match                  [PASS]
+  TEST feedback_evaluate_no_match               [PASS]
+  TEST feedback_evaluate_low_confidence         [PASS]
+  TEST feedback_evaluate_disabled               [PASS]
+  TEST feedback_evaluate_wrong_type             [PASS]
+  TEST feedback_evaluate_null                   [PASS]
+  TEST feedback_rule_overflow                   [PASS]
+  TEST feedback_shutdown_null                   [PASS]
+  TEST feedback_multiple_rules                  [PASS]
+
+=== Results: 13/13 passed, 0 failed ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_fw_feedback_tests" end time: Apr 28 13:28 PDT
+"eni_fw_feedback_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+14/40 Testing: eni_config_extended_tests
+14/40 Test: eni_config_extended_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_config_extended"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_config_extended_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+2026-04-28 13:28:48 [INFO] [config] loaded config from /tmp/eni_test_config.cfg
+2026-04-28 13:28:48 [INFO] [config] loaded config from /tmp/eni_test_modes.cfg
+2026-04-28 13:28:48 [INFO] [config] loaded config from /tmp/eni_test_modes.cfg
+2026-04-28 13:28:48 [INFO] [config] loaded config from /tmp/eni_test_modes.cfg
+2026-04-28 13:28:48 [INFO] [config] loaded config from /tmp/eni_test_modes.cfg
+2026-04-28 13:28:48 [INFO] [config] loaded config from /tmp/eni_test_ws.cfg
+2026-04-28 13:28:48 [WARN] [config] cannot open config file: /tmp/eni_does_not_exist_12345.cfg
+=== ENI Config Extended Tests ===
+
+  TEST config_init                              [PASS]
+  TEST config_init_null                         [PASS]
+  TEST config_load_kv                           [PASS]
+  TEST config_kv_modes                          [PASS]
+  TEST config_kv_whitespace                     [PASS]
+  TEST config_load_nonexistent                  [PASS]
+  TEST config_load_null_args                    [PASS]
+  TEST config_defaults_min                      [PASS]
+  TEST config_defaults_framework                [PASS]
+  TEST config_defaults_null                     [PASS]
+  TEST config_dump                              [config] variant=framework mode=features+intent providers=1
+  provider[0]: generic-decoder
+  filter: confidence=0.80 debounce=100 ms
+  observability: metrics=1 audit=1 trace=0
+  dsp: epoch=0 rate=0 artifact=0.00
+  decoder: classes=0 model=
+[PASS]
+
+=== Results: 11/11 passed, 0 failed ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_config_extended_tests" end time: Apr 28 13:28 PDT
+"eni_config_extended_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+15/40 Testing: eni_stream_bus_extended_tests
+15/40 Test: eni_stream_bus_extended_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_stream_bus_extended"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_stream_bus_extended_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+2026-04-28 13:28:48 [WARN] [fw.bus] event dropped (bus full, total_dropped=1)
+=== ENI Stream Bus Extended Tests ===
+
+  TEST stream_bus_overflow                      [PASS]
+  TEST stream_bus_pop_empty                     [PASS]
+  TEST stream_bus_pop_wait_timeout              [PASS]
+  TEST stream_bus_pop_wait_signal               [PASS]
+  TEST stream_bus_pending                       [PASS]
+  TEST stream_bus_stats                         [stream_bus] pending=1 enqueued=1 dropped=0
+[PASS]
+  TEST stream_bus_uninit_ops                    [PASS]
+  TEST stream_bus_null_args                     [PASS]
+
+=== Results: 8/8 passed, 0 failed ===
+<end of output>
+Test time =   0.08 sec
+----------------------------------------------------------
+Test Passed.
+"eni_stream_bus_extended_tests" end time: Apr 28 13:28 PDT
+"eni_stream_bus_extended_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+16/40 Testing: eni_stim_safety_coverage_tests
+16/40 Test: eni_stim_safety_coverage_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_stim_safety_coverage"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_stim_safety_coverage_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== ENI Stim Safety Coverage Tests ===
+
+  TEST stim_safety_init                         [PASS]
+  TEST stim_safety_check_valid                  [PASS]
+  TEST stim_safety_check_amplitude              [PASS]
+  TEST stim_safety_check_duration               [PASS]
+  TEST stim_safety_interval                     [PASS]
+  TEST stim_safety_reset_daily                  [PASS]
+  TEST stim_safety_absolute_max                 [PASS]
+
+=== Results: 7/7 passed, 0 failed ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_stim_safety_coverage_tests" end time: Apr 28 13:28 PDT
+"eni_stim_safety_coverage_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+17/40 Testing: eni_platform_extended_tests
+17/40 Test: eni_platform_extended_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_platform_extended"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_platform_extended_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== ENI Platform Extended Tests ===
+
+  TEST condvar_wait_signal                      [PASS]
+  TEST condvar_broadcast                        [PASS]
+  TEST condvar_timedwait_timeout                [PASS]
+  TEST thread_detach                            [PASS]
+  TEST mutex_trylock                            [PASS]
+  TEST platform_info                            [PASS]
+  TEST monotonic_clock                          [PASS]
+  TEST atomics                                  [PASS]
+
+=== Results: 8/8 passed, 0 failed ===
+<end of output>
+Test time =   0.27 sec
+----------------------------------------------------------
+Test Passed.
+"eni_platform_extended_tests" end time: Apr 28 13:28 PDT
+"eni_platform_extended_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+18/40 Testing: eni_dsp_tests
+18/40 Test: eni_dsp_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_dsp"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_dsp_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== ENI DSP Tests ===
+[PASS] fft_init
+[PASS] fft_known_sine
+[PASS] psd
+[PASS] band_power
+[PASS] artifact_detection
+[PASS] epoch_buffer
+[PASS] feature_extraction
+
+=== ALL 7 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_dsp_tests" end time: Apr 28 13:28 PDT
+"eni_dsp_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+19/40 Testing: eni_nn_tests
+19/40 Test: eni_nn_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_nn"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_nn_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== ENI NN Tests ===
+[PASS] nn_load
+[PASS] nn_load_bad_magic
+[PASS] nn_forward_identity
+[PASS] nn_softmax_normalization
+
+=== ALL 4 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_nn_tests" end time: Apr 28 13:28 PDT
+"eni_nn_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+20/40 Testing: eni_decoder_tests
+20/40 Test: eni_decoder_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_decoder"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_decoder_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== ENI Decoder Tests ===
+[PASS] energy_decoder_init
+[PASS] energy_decoder_idle
+[PASS] energy_decoder_high_energy
+[PASS] nn_decoder_init
+[PASS] nn_decoder_fallback
+
+=== ALL 5 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_decoder_tests" end time: Apr 28 13:28 PDT
+"eni_decoder_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+21/40 Testing: eni_stimulator_tests
+21/40 Test: eni_stimulator_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_stimulator"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_stimulator_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+2026-04-28 13:28:49 [INFO] [stim.sim] stimulate: type=haptic ch=1 amp=0.50 dur=200 freq=50.0
+2026-04-28 13:28:49 [INFO] [stim.sim] stimulate: type=visual ch=0 amp=1.00 dur=0 freq=0.0
+2026-04-28 13:28:49 [INFO] [stim.sim] stimulate: type=visual ch=0 amp=0.10 dur=0 freq=0.0
+2026-04-28 13:28:49 [INFO] [stim.sim] stimulate: type=auditory ch=0 amp=0.10 dur=0 freq=0.0
+2026-04-28 13:28:49 [INFO] [stim.sim] stimulate: type=haptic ch=0 amp=0.10 dur=0 freq=0.0
+2026-04-28 13:28:49 [INFO] [stim.sim] stimulate: type=neural ch=0 amp=0.10 dur=0 freq=0.0
+2026-04-28 13:28:49 [INFO] [stim.sim] stimulate: type=tacs ch=0 amp=0.10 dur=0 freq=0.0
+2026-04-28 13:28:49 [INFO] [stim.sim] stimulate: type=tdcs ch=0 amp=0.10 dur=0 freq=0.0
+=== ENI Stimulator Tests ===
+[PASS] sim_init
+[PASS] sim_stimulate
+[PASS] sim_stop
+[PASS] sim_all_types
+
+=== ALL 4 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_stimulator_tests" end time: Apr 28 13:28 PDT
+"eni_stimulator_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+22/40 Testing: eni_stim_safety_tests
+22/40 Test: eni_stim_safety_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_stim_safety"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_stim_safety_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== ENI Stim Safety Tests ===
+[PASS] safety_init
+[PASS] safety_clamp_absolute
+[PASS] safety_check_within_limits
+[PASS] safety_check_amplitude_exceed
+[PASS] safety_check_absolute_exceed
+[PASS] safety_rate_limit
+[PASS] safety_daily_count
+
+=== ALL 7 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_stim_safety_tests" end time: Apr 28 13:28 PDT
+"eni_stim_safety_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+23/40 Testing: eni_bci_pipeline_tests
+23/40 Test: eni_bci_pipeline_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_bci_pipeline"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_bci_pipeline_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+2026-04-28 13:28:49 [INFO] [stim.sim] stimulate: type=haptic ch=0 amp=0.50 dur=200 freq=50.0
+2026-04-28 13:28:49 [INFO] [stim.sim] stimulate: type=haptic ch=0 amp=0.30 dur=100 freq=0.0
+=== ENI BCI Pipeline Integration Tests ===
+[PASS] eeg_to_dsp
+[PASS] dsp_to_decoder
+[PASS] decoder_to_feedback
+[PASS] full_pipeline
+
+=== ALL 4 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_bci_pipeline_tests" end time: Apr 28 13:28 PDT
+"eni_bci_pipeline_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+24/40 Testing: eni_dsp_extended_tests
+24/40 Test: eni_dsp_extended_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_dsp_extended"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_dsp_extended_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== ENI DSP Extended Tests ===
+[PASS] fft_dc_signal
+[PASS] fft_zero_signal
+[PASS] fft_multiple_sines
+[PASS] fft_invalid_size
+[PASS] fft_all_valid_sizes
+[PASS] psd_frequency_resolution
+[PASS] band_power_isolation
+[PASS] gamma_band_power
+[PASS] artifact_no_false_positive
+[PASS] artifact_muscle
+[PASS] epoch_overflow
+[PASS] epoch_reset_and_refill
+[PASS] features_zero_signal
+[PASS] features_hjorth_consistency
+[PASS] features_spectral_entropy_range
+[PASS] band_power_custom_range
+
+=== ALL 16 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_dsp_extended_tests" end time: Apr 28 13:28 PDT
+"eni_dsp_extended_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+25/40 Testing: eni_nn_extended_tests
+25/40 Test: eni_nn_extended_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_nn_extended"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_nn_extended_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== ENI NN Extended Tests ===
+[PASS] nn_relu_activation
+[PASS] nn_sigmoid_activation
+[PASS] nn_tanh_activation
+[PASS] nn_linear_activation
+[PASS] nn_load_null_data
+[PASS] nn_load_truncated
+[PASS] nn_forward_large_input
+[PASS] nn_model_properties
+[PASS] nn_relu_positive_passthrough
+[PASS] nn_softmax_extreme_values
+
+=== ALL 10 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_nn_extended_tests" end time: Apr 28 13:28 PDT
+"eni_nn_extended_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+26/40 Testing: eni_decoder_extended_tests
+26/40 Test: eni_decoder_extended_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_decoder_extended"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_decoder_extended_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== ENI Decoder Extended Tests ===
+[PASS] energy_decoder_motor_imagine
+[PASS] energy_decoder_attention
+[PASS] energy_decoder_confidence_sum
+[PASS] nn_decoder_zero_classes
+[PASS] nn_decoder_max_classes
+[PASS] decoder_reinit
+[PASS] decoder_name_preserved
+[PASS] energy_decoder_low_confidence_threshold
+[PASS] decoder_sequential_decodes
+
+=== ALL 9 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_decoder_extended_tests" end time: Apr 28 13:28 PDT
+"eni_decoder_extended_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+27/40 Testing: eni_provider_lifecycle_tests
+27/40 Test: eni_provider_lifecycle_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_provider_lifecycle"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_provider_lifecycle_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+2026-04-28 13:28:49 [INFO] [provider] shutdown: test0
+2026-04-28 13:28:49 [INFO] [provider] started: test1
+2026-04-28 13:28:49 [INFO] [provider] stopped: test1
+2026-04-28 13:28:49 [INFO] [provider] shutdown: test1
+2026-04-28 13:28:49 [INFO] [provider] started: test2
+2026-04-28 13:28:49 [INFO] [provider] stopped: test2
+2026-04-28 13:28:49 [INFO] [provider] shutdown: test2
+2026-04-28 13:28:49 [INFO] [provider] started: test3
+2026-04-28 13:28:49 [INFO] [provider] stopped: test3
+2026-04-28 13:28:49 [INFO] [provider] shutdown: test3
+2026-04-28 13:28:49 [INFO] [provider] shutdown: fail1
+2026-04-28 13:28:49 [INFO] [provider] started: fail2
+2026-04-28 13:28:49 [INFO] [provider] stopped: fail2
+2026-04-28 13:28:49 [INFO] [provider] shutdown: fail2
+2026-04-28 13:28:49 [INFO] [provider] started: multi
+2026-04-28 13:28:49 [INFO] [provider] stopped: multi
+2026-04-28 13:28:49 [INFO] [provider] started: multi
+2026-04-28 13:28:49 [INFO] [provider] stopped: multi
+2026-04-28 13:28:49 [INFO] [provider] started: multi
+2026-04-28 13:28:49 [INFO] [provider] stopped: multi
+2026-04-28 13:28:49 [INFO] [provider] started: multi
+2026-04-28 13:28:49 [INFO] [provider] stopped: multi
+2026-04-28 13:28:49 [INFO] [provider] started: multi
+2026-04-28 13:28:49 [INFO] [provider] stopped: multi
+2026-04-28 13:28:49 [INFO] [provider] shutdown: multi
+2026-04-28 13:28:49 [INFO] [provider] shutdown: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+=== ENI Provider Lifecycle Tests ===
+[PASS] provider_init_basic
+[PASS] provider_start_stop
+[PASS] provider_poll_events
+[PASS] provider_enqueued_events
+[PASS] provider_init_failure
+[PASS] provider_start_failure
+[PASS] provider_poll_failure
+[PASS] provider_failing_ops
+[PASS] provider_multiple_start_stop
+[PASS] provider_name_truncation
+[PASS] provider_ctx_reset
+
+=== ALL 11 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_provider_lifecycle_tests" end time: Apr 28 13:28 PDT
+"eni_provider_lifecycle_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+28/40 Testing: eni_stim_safety_extended_tests
+28/40 Test: eni_stim_safety_extended_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_stim_safety_extended"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_stim_safety_extended_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== ENI Stim Safety Extended Tests ===
+[PASS] safety_zero_amplitude
+[PASS] safety_negative_amplitude
+[PASS] safety_exact_amplitude_limit
+[PASS] safety_exact_absolute_limit
+[PASS] safety_duration_exceed
+[PASS] safety_rate_limit_exact_boundary
+[PASS] safety_rate_limit_one_ms_early
+[PASS] safety_daily_count_exact
+[PASS] safety_daily_reset_restores_full_count
+[PASS] safety_total_count_preserved_after_daily_reset
+[PASS] safety_multiple_stim_types
+[PASS] safety_combined_rate_and_daily
+[PASS] safety_init_clamping
+[PASS] safety_record_increments
+
+=== ALL 14 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_stim_safety_extended_tests" end time: Apr 28 13:28 PDT
+"eni_stim_safety_extended_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+29/40 Testing: eni_full_pipeline_tests
+29/40 Test: eni_full_pipeline_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_full_pipeline"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_full_pipeline_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+2026-04-28 13:28:49 [INFO] [simulator] initialized (interval=500 ms)
+2026-04-28 13:28:49 [INFO] [simulator] started
+2026-04-28 13:28:49 [INFO] [provider] started: pipe_sim
+2026-04-28 13:28:49 [INFO] [simulator] stopped
+2026-04-28 13:28:49 [INFO] [provider] stopped: pipe_sim
+2026-04-28 13:28:49 [INFO] [simulator] shutdown
+2026-04-28 13:28:49 [INFO] [provider] shutdown: pipe_sim
+2026-04-28 13:28:49 [INFO] [simulator] initialized (interval=500 ms)
+2026-04-28 13:28:49 [INFO] [simulator] started
+2026-04-28 13:28:49 [INFO] [provider] started: full_pipe
+2026-04-28 13:28:49 [INFO] [simulator] stopped
+2026-04-28 13:28:49 [INFO] [provider] stopped: full_pipe
+2026-04-28 13:28:49 [INFO] [simulator] shutdown
+2026-04-28 13:28:49 [INFO] [provider] shutdown: full_pipe
+=== ENI Full Pipeline Integration Tests ===
+[PASS] pipeline_provider_to_dsp
+[PASS] pipeline_dsp_to_decoder
+[PASS] pipeline_decoder_to_event
+[PASS] pipeline_safety_check
+[PASS] pipeline_full_signal_to_intent
+[PASS] pipeline_epoch_accumulation
+[PASS] pipeline_multi_epoch_decode
+[PASS] pipeline_config_driven
+[PASS] pipeline_artifact_rejection
+
+=== ALL 9 TESTS PASSED ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_full_pipeline_tests" end time: Apr 28 13:28 PDT
+"eni_full_pipeline_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+30/40 Testing: eni_json_tests
+30/40 Test: eni_json_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_json"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_json_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== JSON Parser Tests ===
+  TEST json_parse_object                        [PASS]
+  TEST json_parse_nested                        [PASS]
+  TEST json_parse_array                         [PASS]
+  TEST json_parse_null                          [PASS]
+  TEST json_parse_escape                        [PASS]
+  TEST json_get_defaults                        [PASS]
+
+6/6 tests passed
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_json_tests" end time: Apr 28 13:28 PDT
+"eni_json_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+31/40 Testing: eni_thread_safety_tests
+31/40 Test: eni_thread_safety_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_thread_safety"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_thread_safety_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== Thread Safety Tests ===
+  TEST mutex_basic                              [PASS]
+  TEST mutex_trylock                            [PASS]
+  TEST condvar_basic                            [PASS]
+  TEST condvar_timedwait                        [PASS]
+  TEST atomics                                  [PASS]
+  TEST thread_create_join                       [PASS]
+  TEST stream_bus_threadsafe                    [PASS]
+
+7/7 tests passed
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"eni_thread_safety_tests" end time: Apr 28 13:28 PDT
+"eni_thread_safety_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+32/40 Testing: eni_data_format_tests
+32/40 Test: eni_data_format_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_data_formats"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_data_format_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+2026-04-28 13:28:49 [INFO] [edf] opened /tmp/eni_test.edf: 2 channels, 1 records, 1.0s/record
+=== Data Format Tests ===
+  TEST data_format_detect                       [PASS]
+  TEST data_format_names                        [PASS]
+  TEST edf_digital_physical_conversion          [PASS]
+  TEST edf_write_read_roundtrip                 [PASS]
+  TEST annotation_system                        [PASS]
+
+5/5 tests passed
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"eni_data_format_tests" end time: Apr 28 13:28 PDT
+"eni_data_format_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+33/40 Testing: eni_session_calibration_tests
+33/40 Test: eni_session_calibration_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_session_calibration"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_session_calibration_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+2026-04-28 13:28:49 [INFO] [session] state: 0 -> 1 (session 1)
+2026-04-28 13:28:49 [INFO] [session] state: 1 -> 2 (session 1)
+2026-04-28 13:28:49 [INFO] [session] state: 2 -> 3 (session 1)
+2026-04-28 13:28:49 [INFO] [session] state: 3 -> 2 (session 1)
+2026-04-28 13:28:49 [INFO] [session] state: 2 -> 4 (session 1)
+2026-04-28 13:28:49 [INFO] [profile] saved profile 'user-42' to /tmp/eni_test_profile.json
+2026-04-28 13:28:49 [INFO] [profile] loaded profile 'user-42' from /tmp/eni_test_profile.json
+2026-04-28 13:28:49 [INFO] [cal] stage 1/4: impedance check
+2026-04-28 13:28:49 [INFO] [cal] stage 2/4: baseline recording (30s)
+2026-04-28 13:28:49 [INFO] [cal] baseline complete: 100 samples
+2026-04-28 13:28:49 [INFO] [cal] stage 3/4: thresholds computed (percentile=0.95)
+2026-04-28 13:28:49 [INFO] [cal] stage 4/4: validation
+2026-04-28 13:28:49 [INFO] [cal] calibration complete: accuracy=80.0% (8/10 trials)
+=== Session & Calibration Tests ===
+  TEST session_lifecycle                        [PASS]
+  TEST profile_save_load                        [PASS]
+  TEST calibration_pipeline                     [PASS]
+  TEST transfer_learning                        [PASS]
+
+4/4 tests passed
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_session_calibration_tests" end time: Apr 28 13:28 PDT
+"eni_session_calibration_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+34/40 Testing: eni_types_coverage_tests
+34/40 Test: eni_types_coverage_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_types_coverage"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_types_coverage_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== types.c Coverage Tests ===
+
+  TEST status_str_ok                            [PASS]
+  TEST status_str_nomem                         [PASS]
+  TEST status_str_invalid                       [PASS]
+  TEST status_str_not_found                     [PASS]
+  TEST status_str_io                            [PASS]
+  TEST status_str_timeout                       [PASS]
+  TEST status_str_permission                    [PASS]
+  TEST status_str_runtime                       [PASS]
+  TEST status_str_connect                       [PASS]
+  TEST status_str_protocol                      [PASS]
+  TEST status_str_config                        [PASS]
+  TEST status_str_unsupported                   [PASS]
+  TEST status_str_policy_denied                 [PASS]
+  TEST status_str_provider                      [PASS]
+  TEST status_str_overflow                      [PASS]
+  TEST status_str_unknown_default               [PASS]
+  TEST timestamp_now                            [PASS]
+  TEST timestamp_monotonic                      [PASS]
+
+=== Results: 18/18 passed, 0 failed ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_types_coverage_tests" end time: Apr 28 13:28 PDT
+"eni_types_coverage_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+35/40 Testing: eni_log_coverage_tests
+35/40 Test: eni_log_coverage_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_log_coverage"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_log_coverage_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+2026-04-28 13:28:49 [INFO] [test] stderr default check
+=== log.c Coverage Tests ===
+
+  TEST log_level_trace                          [PASS]
+  TEST log_level_debug                          [PASS]
+  TEST log_level_info                           [PASS]
+  TEST log_level_warn                           [PASS]
+  TEST log_level_error                          [PASS]
+  TEST log_level_fatal                          [PASS]
+  TEST log_level_default_branch                 [PASS]
+  TEST log_filtering_suppressed                 [PASS]
+  TEST log_filtering_passed                     [PASS]
+  TEST log_null_module                          [PASS]
+  TEST log_output_redirect                      [PASS]
+  TEST log_stderr_default                       [PASS]
+  TEST log_macros                               [PASS]
+
+=== Results: 13/13 passed, 0 failed ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_log_coverage_tests" end time: Apr 28 13:28 PDT
+"eni_log_coverage_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+36/40 Testing: eni_event_coverage_tests
+36/40 Test: eni_event_coverage_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_event_coverage"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_event_coverage_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== event.c Coverage Tests ===
+
+  TEST event_print_null                         [PASS]
+  TEST event_print_intent                       [event] id=1 v=1 type=intent source=src-intent
+  intent: move_left (confidence=0.95)
+[PASS]
+  TEST event_print_features                     [event] id=2 v=1 type=features source=src-feat
+  features (2):
+    alpha = 0.5000
+    beta = 0.8000
+[PASS]
+  TEST event_print_raw                          [event] id=3 v=1 type=raw source=src-raw
+  raw: 3 bytes
+[PASS]
+  TEST event_print_control                      [event] id=4 v=1 type=control source=src-ctrl
+[PASS]
+  TEST event_print_features_empty               [event] id=5 v=1 type=features source=src-feat-empty
+  features (0):
+[PASS]
+  TEST event_feature_overflow                   [PASS]
+  TEST event_raw_overflow                       [PASS]
+  TEST event_init_null_ev                       [PASS]
+  TEST event_init_null_source                   [PASS]
+  TEST event_set_intent_null_ev                 [PASS]
+  TEST event_set_intent_null_intent             [PASS]
+  TEST event_set_raw_null_data                  [PASS]
+  TEST event_add_feature_null_name              [PASS]
+  TEST event_set_intent_wrong_type              [PASS]
+  TEST event_add_feature_wrong_type             [PASS]
+  TEST event_set_raw_wrong_type                 [PASS]
+  TEST event_long_source                        [PASS]
+  TEST event_long_intent                        [PASS]
+
+=== Results: 19/19 passed, 0 failed ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_event_coverage_tests" end time: Apr 28 13:28 PDT
+"eni_event_coverage_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+37/40 Testing: eni_policy_coverage_tests
+37/40 Test: eni_policy_coverage_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_policy_coverage"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_policy_coverage_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== policy.c Coverage Tests ===
+
+  TEST policy_dump_null                         [PASS]
+  TEST policy_dump_empty                        [policy] 0 rules (default=allow)
+[PASS]
+  TEST policy_dump_default_deny                 [policy] 0 rules (default=deny)
+[PASS]
+  TEST policy_dump_allow_safe                   [policy] 1 rules (default=allow)
+  [0] ui.cursor.move → allow (safe)
+[PASS]
+  TEST policy_dump_deny_restricted              [policy] 1 rules (default=allow)
+  [0] system.shutdown → deny (restricted)
+[PASS]
+  TEST policy_dump_confirm_controlled           [policy] 1 rules (default=allow)
+  [0] device.pair → confirm (controlled)
+[PASS]
+  TEST policy_dump_all_combos                   [policy] 3 rules (default=allow)
+  [0] action.a → allow (safe)
+  [1] action.b → deny (controlled)
+  [2] action.c → confirm (restricted)
+[PASS]
+  TEST policy_overflow                          [PASS]
+  TEST policy_init_null                         [PASS]
+  TEST policy_add_rule_null_engine              [PASS]
+  TEST policy_add_rule_null_action              [PASS]
+  TEST policy_evaluate_null_engine              [PASS]
+  TEST policy_evaluate_null_action              [PASS]
+  TEST policy_set_default_deny_null             [PASS]
+  TEST policy_long_action                       [PASS]
+  TEST policy_evaluate_known_action             [PASS]
+  TEST policy_evaluate_unknown_allow            [PASS]
+  TEST policy_evaluate_unknown_deny             [PASS]
+
+=== Results: 18/18 passed, 0 failed ===
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_policy_coverage_tests" end time: Apr 28 13:28 PDT
+"eni_policy_coverage_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+38/40 Testing: eni_calibration_session_tests
+38/40 Test: eni_calibration_session_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_calibration_session"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_calibration_session_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+2026-04-28 13:28:49 [WARN] [cal] calibration failed: accuracy=40.00%
+=== Integration Test: Calibration + Session Workflow ===
+
+  TEST e2e_calibration_session_workflow                   [PASS]
+  TEST profile_persistence_roundtrip                      [PASS]
+  TEST transfer_learning_cross_session                    [PASS]
+  TEST session_invalid_transitions                        [PASS]
+  TEST calibration_failure_low_accuracy                   [PASS]
+  TEST session_metadata_limits                            [PASS]
+  TEST config_driven_session                              [PASS]
+
+Total: 7  Passed: 7  Failed: 0
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"eni_calibration_session_tests" end time: Apr 28 13:28 PDT
+"eni_calibration_session_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+39/40 Testing: eni_mini_session_tests
+39/40 Test: eni_mini_session_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_mini_session"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_mini_session_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+step 1: platform_init
+step 2: session_init
+step 2 done: rc=0
+step 3: calibration_init
+step 3 done: rc=0
+step 4: impedance
+2026-04-28 13:28:49 [INFO] [cal] stage 1/4: impedance check
+step 4 done
+step 5: baseline
+2026-04-28 13:28:49 [INFO] [cal] stage 2/4: baseline recording (30s)
+2026-04-28 13:28:49 [INFO] [cal] baseline complete: 100 samples
+step 5 done
+step 6: thresholds
+2026-04-28 13:28:49 [INFO] [cal] stage 3/4: thresholds computed (percentile=0.95)
+step 6 done
+step 7: profile_save
+2026-04-28 13:28:49 [INFO] [profile] saved profile 'test-user' to test_profile_out.json
+step 7 done: rc=0
+step 8: cleanup
+ALL DONE
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"eni_mini_session_tests" end time: Apr 28 13:28 PDT
+"eni_mini_session_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+40/40 Testing: eni_concurrent_stress_tests
+40/40 Test: eni_concurrent_stress_tests
+Command: "/home/spatchava/embeddedos-org/eNI/build-linux/tests/eni_test_concurrent_stress"
+Directory: /home/spatchava/embeddedos-org/eNI/build-linux/tests
+"eni_concurrent_stress_tests" start time: Apr 28 13:28 PDT
+Output:
+----------------------------------------------------------
+=== Stress Tests: Multi-Device Sync & Concurrent Calibration ===
+
+  STRESS multidevice_sync_workflow                      [PASS]
+  STRESS multidevice_concurrent_access                  [PASS]
+  STRESS concurrent_calibration                         [PASS]
+  STRESS stream_bus_producer_consumer_stress            [PASS]
+  STRESS mempool_concurrent_alloc_free                  [PASS]
+  STRESS device_rapid_connect_disconnect_cycle          [PASS]
+  STRESS calibration_high_freq_sample_injection         [PASS]
+
+── Summary ─────────────────────────────────────────────
+  Total:  7
+  Passed: 7
+  Failed: 0
+─────────────────────────────────────────────────────────
+
+=== ALL 7 STRESS TESTS PASSED ===
+<end of output>
+Test time =   0.12 sec
+----------------------------------------------------------
+Test Passed.
+"eni_concurrent_stress_tests" end time: Apr 28 13:28 PDT
+"eni_concurrent_stress_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Apr 28 13:28 PDT
+
+integration =   0.05 sec*proc
+
+stress =   0.12 sec*proc
+
+unit =   0.46 sec*proc
+

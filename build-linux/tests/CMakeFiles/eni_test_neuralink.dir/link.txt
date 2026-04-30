@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/eni_test_neuralink.dir/test_neuralink.c.o  -o eni_test_neuralink  ../common/libeni_common.a ../providers/libeni_providers.a ../common/libeni_common.a -lm 

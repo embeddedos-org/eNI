@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.16)
 project(ENI
     VERSION 0.3.0
     DESCRIPTION "Neural Interface Adapter — BCI/sensor input integration for EoS AI Layer"

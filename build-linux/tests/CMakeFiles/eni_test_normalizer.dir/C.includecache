@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/spatchava/embeddedos-org/eNI/tests/test_normalizer.c
+stdio.h
+-
+string.h
+-
+assert.h
+-
+stdint.h
+-
+stdbool.h
+-
+stddef.h
+-
+

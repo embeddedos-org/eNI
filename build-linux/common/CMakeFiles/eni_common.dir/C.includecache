@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../common/include/eni/data_format.h
+eni/types.h
+../common/include/eni/eni/types.h
+
+../common/include/eni/types.h
+stdint.h
+-
+stddef.h
+-
+stdbool.h
+-
+
+/home/spatchava/embeddedos-org/eNI/common/src/data_format.c
+eni/data_format.h
+/home/spatchava/embeddedos-org/eNI/common/src/eni/data_format.h
+string.h
+-
+stdio.h
+-
+
