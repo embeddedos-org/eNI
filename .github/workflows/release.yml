@@ -1,148 +1,27 @@
 name: Release
+# Thin caller for embeddedos-org/ebuild reusable orchestrator.
 
 on:
   push:
-    tags:
-      - "v*.*.*"
-      - "v*.*.*-*"
+    branches: [master, main]
 
 permissions:
   contents: write
+  packages: write
   id-token: write
+  attestations: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  validate:
-    name: Validate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build & Test
-        run: |
-          cmake -B build -DENI_BUILD_TESTS=ON
-          cmake --build build
-          ctest --test-dir build --output-on-failure
-
-  cross-compile:
-    name: Cross-Compile (${{ matrix.arch }})
-    runs-on: ubuntu-latest
-    needs: validate
-    strategy:
-      matrix:
-        include:
-          - arch: x86_64-linux
-            cc: gcc
-            pkg: ""
-          - arch: aarch64-linux
-            cc: aarch64-linux-gnu-gcc
-            pkg: gcc-aarch64-linux-gnu
-          - arch: arm-linux-gnueabihf
-            cc: arm-linux-gnueabihf-gcc
-            pkg: gcc-arm-linux-gnueabihf
-          - arch: riscv64-linux
-            cc: riscv64-linux-gnu-gcc
-            pkg: gcc-riscv64-linux-gnu
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install cross-compiler
-        if: matrix.pkg != ''
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ${{ matrix.pkg }}
-      - name: Extract version
-        id: version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-      - name: Build
-        run: |
-          cmake -B build \
-            -DCMAKE_C_COMPILER=${{ matrix.cc }} \
-            -DCMAKE_SYSTEM_NAME=Linux \
-            -DCMAKE_BUILD_TYPE=Release
-          cmake --build build
-      - name: Package
-        run: |
-          mkdir -p staging/include staging/lib
-          find build -name "*.a" -exec cp {} staging/lib/ \;
-          cp -r common/include/* staging/include/ 2>/dev/null || true
-          cp -r framework/include/* staging/include/ 2>/dev/null || true
-          cp -r min/include/* staging/include/ 2>/dev/null || true
-          tar czf eni-${{ steps.version.outputs.version }}-${{ matrix.arch }}.tar.gz -C staging .
-      - uses: actions/upload-artifact@v4
-        with:
-          name: eni-${{ matrix.arch }}
-          path: "*.tar.gz"
-
   release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    needs: [validate, cross-compile]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Extract version
-        id: version
-        run: |
-          TAG=${GITHUB_REF#refs/tags/}
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: eni-*
-          merge-multiple: true
-      - name: Generate checksums
-        run: sha256sum *.tar.gz > SHA256SUMS.txt
-      - name: Generate SBOM (CycloneDX v1.5)
-        run: |
-          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          UUID=$(cat /proc/sys/kernel/random/uuid 2>/dev/null || echo "00000000-0000-0000-0000-$(date +%s)")
-          cat > sbom.cdx.json << EOF
-          {
-            "bomFormat": "CycloneDX",
-            "specVersion": "1.5",
-            "serialNumber": "urn:uuid:${UUID}",
-            "version": 1,
-            "metadata": {
-              "timestamp": "${TIMESTAMP}",
-              "component": {
-                "type": "library",
-                "name": "eNI",
-                "version": "${{ steps.version.outputs.tag }}",
-                "supplier": { "name": "embeddedos-org" },
-                "licenses": [{ "license": { "id": "MIT" } }]
-              }
-            },
-            "components": []
-          }
-          EOF
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v3
-      - name: Sign artifacts
-        run: |
-          for f in *.tar.gz; do
-            cosign sign-blob --yes --bundle "${f}.sig.bundle" "$f" 2>/dev/null || true
-          done
-      - name: Check release does not already exist
-        run: |
-          if gh release view "${{ steps.version.outputs.tag }}" &>/dev/null; then
-            echo "::error::Release already exists."
-            exit 1
-          fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: "eNI ${{ steps.version.outputs.tag }}"
-          generate_release_notes: true
-          body: |
-            ### Release Integrity
-            - `SHA256SUMS.txt` — checksums
-            - `sbom.cdx.json` — CycloneDX SBOM (v1.5)
-            - `*.sig.bundle` — Sigstore cosign signatures
-          files: |
-            *.tar.gz
-            *.sig.bundle
-            SHA256SUMS.txt
-            sbom.cdx.json
-          prerelease: ${{ contains(steps.version.outputs.tag, 'rc') || contains(steps.version.outputs.tag, 'beta') }}
+    uses: embeddedos-org/ebuild/.github/workflows/_reusable-orchestrator.yml@v1
+    with:
+      project_type: cmake
+      platforms: linux-x64,linux-arm64,windows-x64,macos-x64,macos-arm64
+      build_book: true
+      build_video: true
+      build_docker: false
+    secrets: inherit
