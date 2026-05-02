@@ -1,0 +1,2 @@
+/usr/bin/ar qc libeni_platform.a  CMakeFiles/eni_platform.dir/linux/platform_linux.c.o
+/usr/bin/ranlib libeni_platform.a

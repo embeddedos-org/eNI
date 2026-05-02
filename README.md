@@ -1,5 +1,10 @@
 # eNI — Embedded Neural Interface Framework
 
+<!-- BEGIN PLATFORMS -->
+_The release pipeline will populate per-platform downloads here on the first release._
+<!-- END PLATFORMS -->
+
+
 > **World-class, cross-platform, production-ready neural interface framework in C11**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -157,3 +162,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+

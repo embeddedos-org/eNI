@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/eni_test_provider_eeg.dir/test_provider_eeg.c.o  -o eni_test_provider_eeg  ../common/libeni_common.a ../providers/libeni_providers.a ../common/libeni_common.a -lm 

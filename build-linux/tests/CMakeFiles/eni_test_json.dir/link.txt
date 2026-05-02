@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/eni_test_json.dir/test_json.c.o  -o eni_test_json  ../common/libeni_common.a -lm 

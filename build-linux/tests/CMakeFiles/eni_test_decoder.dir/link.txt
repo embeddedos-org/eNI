@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/eni_test_decoder.dir/test_decoder.c.o  -o eni_test_decoder  ../common/libeni_common.a -lm 

@@ -1,0 +1,42 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../common/include/eni/types.h
+stdint.h
+-
+stddef.h
+-
+stdbool.h
+-
+
+../platform/include/eni_platform/platform.h
+eni/types.h
+../platform/include/eni_platform/eni/types.h
+windows.h
+-
+pthread.h
+-
+
+/home/spatchava/embeddedos-org/eNI/platform/linux/platform_linux.c
+eni_platform/platform.h
+/home/spatchava/embeddedos-org/eNI/platform/linux/eni_platform/platform.h
+stdint.h
+-
+time.h
+-
+unistd.h
+-
+pthread.h
+-
+stdatomic.h
+-
+errno.h
+-
+string.h
+-
+

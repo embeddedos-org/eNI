@@ -1,0 +1,2 @@
+/usr/bin/ar qc libeni_test_mocks.a  CMakeFiles/eni_test_mocks.dir/mocks/mock_neural_input.c.o CMakeFiles/eni_test_mocks.dir/mocks/mock_provider.c.o
+/usr/bin/ranlib libeni_test_mocks.a

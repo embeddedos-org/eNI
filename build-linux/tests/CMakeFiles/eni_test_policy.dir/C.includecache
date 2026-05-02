@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../common/include/eni/policy.h
+eni/types.h
+../common/include/eni/eni/types.h
+
+../common/include/eni/types.h
+stdint.h
+-
+stddef.h
+-
+stdbool.h
+-
+
+/home/spatchava/embeddedos-org/eNI/tests/test_policy.c
+stdio.h
+-
+string.h
+-
+assert.h
+-
+eni/types.h
+/home/spatchava/embeddedos-org/eNI/tests/eni/types.h
+eni/policy.h
+/home/spatchava/embeddedos-org/eNI/tests/eni/policy.h
+

@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/eni_test_framework.dir/test_framework.c.o  -o eni_test_framework  ../common/libeni_common.a ../framework/libeni_framework.a ../min/libeni_min.a ../platform/libeni_platform.a ../common/libeni_common.a -lm -lpthread 

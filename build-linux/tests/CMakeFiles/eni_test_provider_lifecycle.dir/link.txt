@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/eni_test_provider_lifecycle.dir/test_provider_lifecycle.c.o  -o eni_test_provider_lifecycle  ../common/libeni_common.a libeni_test_mocks.a ../common/libeni_common.a -lm 

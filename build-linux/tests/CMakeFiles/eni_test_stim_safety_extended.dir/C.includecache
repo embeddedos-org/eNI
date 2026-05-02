@@ -1,0 +1,36 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../common/include/eni/stim_safety.h
+eni/types.h
+../common/include/eni/eni/types.h
+eni/stimulator.h
+../common/include/eni/eni/stimulator.h
+
+../common/include/eni/stimulator.h
+eni/types.h
+../common/include/eni/eni/types.h
+
+../common/include/eni/types.h
+stdint.h
+-
+stddef.h
+-
+stdbool.h
+-
+
+/home/spatchava/embeddedos-org/eNI/tests/test_stim_safety_extended.c
+stdio.h
+-
+string.h
+-
+assert.h
+-
+eni/stim_safety.h
+/home/spatchava/embeddedos-org/eNI/tests/eni/stim_safety.h
+
