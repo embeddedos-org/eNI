@@ -4,6 +4,13 @@ on:
     - cron: '0 4 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   eosim-validation:
     strategy:
@@ -12,15 +19,28 @@ jobs:
         python: ['3.10', '3.11', '3.12']
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
 
-      - name: Install EoSim
-        run: pip install eosim || echo "EoSim package not available in PyPI"
+      - name: Install EoSim from source (pinned)
+        env:
+          EOSIM_VERSION: "0.1.0"
+        shell: bash
+        run: |
+          set -e
+          git clone --depth 1 --branch v${EOSIM_VERSION} https://github.com/embeddedos-org/EoSim.git /tmp/EoSim
+          pip install -e /tmp/EoSim
 
       - name: Validate EoSim installation
+        shell: bash
         run: |
-          python -c "print('EoSim sanity check passed')" || true
+          set -e
+          OUT=$(eosim --version 2>&1)
+          echo "eosim --version: $OUT"
+          if ! echo "$OUT" | grep -Eq '[0-9]+\.[0-9]+\.[0-9]+'; then
+            echo "::error::eosim --version did not return a semantic version"
+            exit 1
+          fi
