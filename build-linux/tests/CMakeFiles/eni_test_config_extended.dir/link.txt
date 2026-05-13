@@ -1,1 +1,0 @@
-/usr/bin/cc -g   CMakeFiles/eni_test_config_extended.dir/test_config_extended.c.o  -o eni_test_config_extended  ../common/libeni_common.a -lm 

@@ -1,1 +1,0 @@
-/usr/bin/cc -g   CMakeFiles/eni_test_event_coverage.dir/test_event_coverage.c.o  -o eni_test_event_coverage  ../common/libeni_common.a -lm 

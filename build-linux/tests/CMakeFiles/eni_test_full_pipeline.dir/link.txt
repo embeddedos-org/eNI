@@ -1,1 +1,0 @@
-/usr/bin/cc -g   CMakeFiles/eni_test_full_pipeline.dir/integration/test_full_pipeline.c.o  -o eni_test_full_pipeline  ../common/libeni_common.a ../providers/libeni_providers.a libeni_test_mocks.a -lm ../common/libeni_common.a -lm 

@@ -1,1 +1,0 @@
-/usr/bin/cc -g   CMakeFiles/eni_test_fw_decoder.dir/test_fw_decoder.c.o  -o eni_test_fw_decoder  ../common/libeni_common.a -lm 

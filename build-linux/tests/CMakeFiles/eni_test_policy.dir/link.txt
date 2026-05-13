@@ -1,1 +1,0 @@
-/usr/bin/cc -g   CMakeFiles/eni_test_policy.dir/test_policy.c.o  -o eni_test_policy  ../common/libeni_common.a -lm 

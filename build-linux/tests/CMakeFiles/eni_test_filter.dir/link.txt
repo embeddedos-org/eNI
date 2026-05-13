@@ -1,1 +1,0 @@
-/usr/bin/cc -g   CMakeFiles/eni_test_filter.dir/test_filter.c.o  -o eni_test_filter  ../common/libeni_common.a ../min/libeni_min.a ../common/libeni_common.a -lm 

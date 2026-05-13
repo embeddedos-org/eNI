@@ -1,1 +1,0 @@
-/usr/bin/cc -g   CMakeFiles/eni_test_stim_safety_extended.dir/test_stim_safety_extended.c.o  -o eni_test_stim_safety_extended  ../common/libeni_common.a libeni_test_mocks.a ../common/libeni_common.a -lm 

@@ -1,14 +1,19 @@
 {
   "name": "@eni/sdk",
-  "version": "0.2.0",
-  "description": "eNI Node.js SDK — TypeScript bindings for the embedded Neural Interface",
+  "version": "3.0.0",
+  "description": "eNI Node.js SDK \u2014 TypeScript bindings for the embedded Neural Interface",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "test": "jest"
   },
-  "keywords": ["neural-interface", "bci", "eeg", "embedded"],
+  "keywords": [
+    "neural-interface",
+    "bci",
+    "eeg",
+    "embedded"
+  ],
   "license": "MIT",
   "devDependencies": {
     "typescript": "^5.3.0",

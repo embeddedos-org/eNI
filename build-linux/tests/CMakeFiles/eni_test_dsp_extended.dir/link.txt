@@ -1,1 +1,0 @@
-/usr/bin/cc -g   CMakeFiles/eni_test_dsp_extended.dir/test_dsp_extended.c.o  -o eni_test_dsp_extended  ../common/libeni_common.a libeni_test_mocks.a -lm ../common/libeni_common.a -lm 

@@ -1,1 +1,0 @@
-/usr/bin/cc -g   CMakeFiles/eni_test_stimulator.dir/test_stimulator.c.o  -o eni_test_stimulator  ../common/libeni_common.a ../providers/libeni_providers.a ../common/libeni_common.a -lm 

@@ -20,3 +20,11 @@ build_test/
 # OS files
 .DS_Store
 Thumbs.db
+build-*/
+dist/
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+target/
+.pytest_cache/

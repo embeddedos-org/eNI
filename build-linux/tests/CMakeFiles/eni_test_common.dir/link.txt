@@ -1,1 +1,0 @@
-/usr/bin/cc -g   CMakeFiles/eni_test_common.dir/test_common.c.o  -o eni_test_common  ../common/libeni_common.a -lm 

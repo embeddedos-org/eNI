@@ -1,1 +1,0 @@
-/usr/bin/cc -g   CMakeFiles/eni.dir/main.c.o  -o eni  ../common/libeni_common.a ../min/libeni_min.a ../framework/libeni_framework.a ../providers/libeni_providers.a ../platform/libeni_platform.a ../min/libeni_min.a -lpthread ../common/libeni_common.a -lm 

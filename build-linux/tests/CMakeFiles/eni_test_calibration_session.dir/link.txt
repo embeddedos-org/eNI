@@ -1,1 +1,0 @@
-/usr/bin/cc -g   CMakeFiles/eni_test_calibration_session.dir/integration/test_calibration_session.c.o  -o eni_test_calibration_session  ../common/libeni_common.a ../platform/libeni_platform.a -lm ../common/libeni_common.a -lm -lpthread 

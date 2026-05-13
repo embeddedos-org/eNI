@@ -1,2 +1,0 @@
-/usr/bin/ar qc libeni_providers.a  CMakeFiles/eni_providers.dir/simulator/simulator.c.o CMakeFiles/eni_providers.dir/generic/generic.c.o CMakeFiles/eni_providers.dir/neuralink/neuralink.c.o CMakeFiles/eni_providers.dir/eeg/eeg.c.o CMakeFiles/eni_providers.dir/stimulator_sim/stimulator_sim.c.o
-/usr/bin/ranlib libeni_providers.a
