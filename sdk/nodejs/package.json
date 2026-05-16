@@ -1,6 +1,6 @@
 {
   "name": "@eni/sdk",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "eNI Node.js SDK \u2014 TypeScript bindings for the embedded Neural Interface",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

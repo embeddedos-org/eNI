@@ -3,7 +3,7 @@
 
 [package]
 name = "eni"
-version = "3.0.0"
+version = "3.0.1"
 edition = "2021"
 description = "Rust bindings for the eNI embedded Neural Interface library"
 license = "MIT"
