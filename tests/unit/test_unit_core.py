@@ -1,12 +1,8 @@
 import unittest
-
-class TesteNIUnit(unittest.TestCase):
-    def test_tcp_handshake_state_machine(self):
+class TestENIUnit(unittest.TestCase):
+    def test_tcp_3way_handshake(self):
         state = "CLOSED"
-        # Client sends SYN
-        state = "SYN_SENT"
-        # Server sends SYN-ACK
-        state = "SYN_RECEIVED"
-        # Client sends ACK
-        state = "ESTABLISHED"
-        assert state == "ESTABLISHED", "TCP state machine failed to establish connection"
+        state = "SYN_SENT" # client sends SYN
+        state = "SYN_RCVD" # server sends SYN-ACK
+        state = "ESTABLISHED" # client sends ACK
+        self.assertEqual(state, "ESTABLISHED")

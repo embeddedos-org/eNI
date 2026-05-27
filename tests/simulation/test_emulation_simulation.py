@@ -1,8 +1,6 @@
 import unittest
-
-class TesteNISimulation(unittest.TestCase):
-    def test_phy_ethernet_loopback(self):
-        # Simulate physical layer loopback
-        tx_buffer = b"ETHERNET_FRAME_DATA"
-        rx_buffer = tx_buffer # Hardware loopback enabled
-        assert rx_buffer == tx_buffer, "PHY loopback hardware simulation failed"
+class TestENISimulation(unittest.TestCase):
+    def test_phy_loopback(self):
+        tx = b"hello"
+        rx = tx # loopback mode
+        self.assertEqual(rx, b"hello")
