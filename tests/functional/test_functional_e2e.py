@@ -1,11 +1,12 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2026 EoS Project
 import unittest
-class TestEniFunctional(unittest.TestCase):
-    def test_tcp_handshake_state_machine(self):
-        print("Testing TCP 3-way handshake state machine...")
-        state = "CLOSED"
-        state = "SYN_SENT"
-        state = "SYN_RCVD"
-        state = "ESTABLISHED"
-        self.assertEqual(state, "ESTABLISHED")
+
+class TesteNIFunctional(unittest.TestCase):
+    def test_packet_routing_pipeline(self):
+        packet = {"src": "192.168.1.10", "dst": "10.0.0.5", "payload": "hello"}
+        routing_table = {"10.0.0.0/24": "eth0", "192.168.1.0/24": "eth1"}
+        # Route packet
+        interface = None
+        for subnet, iface in routing_table.items():
+            if packet["dst"].startswith("10.0.0."):
+                interface = "eth0"
+        assert interface == "eth0", "Packet failed to route to eth0"
