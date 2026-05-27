@@ -6,7 +6,6 @@ class EniIPGeolocator:
     when physical GPS lock is lost.
     """
     def __init__(self):
-        # Uses ip-api.com (reliable, public, free IP geolocation API)
         self.base_url = "http://ip-api.com/json/"
 
     def get_location_by_ip(self, ip_address: str = "") -> dict:

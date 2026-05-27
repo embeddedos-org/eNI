@@ -23,7 +23,7 @@ We continuously benchmark eNI — Neural Interface against the entire EmbeddedOS
 
 ---
 
-## 🎬 Product Marketing Video
+## 🎬 Product Marketing Video (App Store Proof of Production)
 
 Experience eNI — Neural Interface in action! Watch our high-fidelity product demonstration and marketing video:
 
