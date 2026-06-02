@@ -44,7 +44,7 @@ jobs:
           pip install pytest pytest-cov
           pip install -r requirements.txt 2>/dev/null || true
           python -m pytest tests/ -v --tb=short --cov=. --cov-report=xml
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v6
         with:
           files: coverage.xml
           flags: eni
