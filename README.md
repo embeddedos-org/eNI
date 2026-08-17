@@ -1,59 +1,90 @@
-# eNI — Neural Interface
+# eNI — Neural Interface Adapter
 
-[![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-success?style=for-the-badge)](https://github.com/embeddedos-org/eNI)
-[![Build Status](https://img.shields.io/badge/Build-Passing-success?style=for-the-badge)](https://github.com/embeddedos-org/eNI/actions)
-[![Test Coverage](https://img.shields.io/badge/Coverage-100%25-success?style=for-the-badge)](https://github.com/embeddedos-org/eNI)
-[![GPS API](https://img.shields.io/badge/GPS%20API-Integrated-blue?style=for-the-badge)](https://github.com/embeddedos-org/eNI)
+[![CI](https://github.com/embeddedos-org/eNI/actions/workflows/ci.yml/badge.svg)](https://github.com/embeddedos-org/eNI/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/embeddedos-org/eNI/actions/workflows/codeql.yml/badge.svg)](https://github.com/embeddedos-org/eNI/actions/workflows/codeql.yml)
+[![Scorecard](https://github.com/embeddedos-org/eNI/actions/workflows/scorecard.yml/badge.svg)](https://github.com/embeddedos-org/eNI/actions/workflows/scorecard.yml)
+[![Release](https://github.com/embeddedos-org/eNI/actions/workflows/release.yml/badge.svg)](https://github.com/embeddedos-org/eNI/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-High-Performance Network Stack with GPS Integration. Engineered to meet the highest standards of production readiness, performance, and security.
+eNI (CMake project `ENI`) is the neural-interface adapter of the EmbeddedOS
+ecosystem, written in C. It integrates brain-computer-interface (BCI) and
+biosignal/sensor input for the EoS AI layer: acquiring data from BCI hardware and
+simulators through a provider model, running it through DSP, a neural decoder,
+and an on-device neural-network inference engine, and driving a
+stimulator/feedback path. It reads and writes neural data formats (EDF+, BDF+,
+XDF, and a native ENI format) and includes session management and calibration.
 
----
+eNI is part of the **EmbeddedOS**
+([embeddedos-org](https://github.com/embeddedos-org)) ecosystem, alongside
+[EoS](https://github.com/embeddedos-org/eos) (OS core),
+[eBoot](https://github.com/embeddedos-org/eBoot) (secure bootloader), and
+[eAI](https://github.com/embeddedos-org/eAI) (embedded AI). Project version 0.3.0.
 
-## 🚀 World-Class Simulation & Analytics
+## What's inside
 
-### Real-Time Emulation Dashboard
-Below is the real-time simulation dashboard generated from our production test suite. It displays comprehensive latency profiles, coverage heatmaps, and scheduling performance.
+| Path | Contents |
+|------|----------|
+| `providers/` | Input providers: `eeg`, `lsl` (Lab Streaming Layer), `neuralink`, `simulator`, `wireless`, `stimulator_sim`, `generic`, `template` |
+| `common/` | Core signal path: `dsp`, `nn` (neural network), `feedback`, `tinyml`, `math`, `hal` |
+| `min/` | ENI-Min lightweight runtime |
+| `framework/` | ENI-Framework platform |
+| `platform/` | Platform adapters: `linux`, `macos`, `windows`, `posix`, `eos` |
+| `cli/` | `eni` command-line tool |
+| `integrations/` | Optional `ros2`, `oni` (ONI compliance), `eipc_streaming` |
+| `models/` | Model assets and metadata |
+| `bindings/`, `sdk/` | Language bindings (C++, Java, Python, Rust) and SDKs (Node.js, Python) |
+| `sim/` | Simulation environment |
+| `gui/` | Front-end (`package.json` + `src/`, `backend/`) |
+| `eni/`, `network/` | Python package (`core.py`) and an IP-based geolocation helper (`ip_geolocator.py`) used as a location fallback when GPS lock is lost |
+| `tests/` | Unit, functional, performance, and simulation tests |
 
-![Emulation Dashboard](docs/screenshots/eni_simulation.png)
+## Build
 
-### Unified Organization Health Matrix
-We continuously benchmark eNI — Neural Interface against the entire EmbeddedOS ecosystem to ensure flawless interoperability.
+Requires CMake ≥ 3.16 and a C compiler. `CMakePresets.json` defines the presets
+used by CI.
 
-![Overall Dashboard](docs/screenshots/overall_dashboard.png)
-
----
-
-## 🎬 Product Marketing Video (App Store Proof of Production)
-
-Experience eNI — Neural Interface in action! Watch our high-fidelity product demonstration and marketing video:
-
-> 🎥 **[Watch the eNI — Neural Interface Product Video](docs/videos/eni_marketing.mp4)**
-
----
-
-## 🛠️ Production-Grade Architecture
-
-- **Domain**: C • TCP/IP • GPS • 1Gbps
-- **GPS Integration**: Production-grade geolocation and time synchronization APIs integrated.
-- **Benchmarks**: Outperforms leading industry standards including **lwIP, FreeRTOS-TCP**.
-
----
-
-## 🧪 Comprehensive Test Suite
-
-This repository features **100% test coverage** across four critical categories:
-1. **Unit Tests**: Full functional coverage of core components.
-2. **Functional E2E Tests**: End-to-end integration and boundary input robustness.
-3. **Performance Benchmarks**: Nanosecond-precision latency profiling.
-4. **Hardware Simulation**: High-fidelity peripheral and register emulation.
-
-To run the entire suite locally:
 ```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+```
+
+### Selected build options
+
+| Option | Default | Meaning |
+|--------|---------|---------|
+| `ENI_BUILD_MIN` | `ON` | Build the ENI-Min runtime |
+| `ENI_BUILD_FRAMEWORK` | `ON` | Build the ENI-Framework platform |
+| `ENI_BUILD_CLI` | `ON` | Build the CLI |
+| `ENI_BUILD_DSP` | `ON` | Build the DSP signal-processing module |
+| `ENI_BUILD_DECODER` | `ON` | Build the neural decoder |
+| `ENI_BUILD_NN` | `ON` | Build the neural-network inference engine |
+| `ENI_BUILD_STIMULATOR` | `ON` | Build the stimulator/feedback subsystem |
+| `ENI_BUILD_DATA_FORMATS` | `ON` | Build neural data-format I/O (EDF+/BDF+/XDF/ENI) |
+| `ENI_BUILD_SESSION` | `ON` | Build session management and calibration |
+| `ENI_BUILD_TESTS` | `OFF` | Build unit tests |
+| `ENI_ONNX_ENABLED` / `ENI_BUILD_TFLITE` | `OFF` | Enable ONNX / TFLite Micro model support |
+| `ENI_BUILD_ROS2` / `ENI_BUILD_ONI` | `OFF` | Build ROS 2 / ONI integrations |
+| `ENI_WIRELESS_ENABLED` | `OFF` | Enable the wireless BCI provider |
+
+The build also wires in sanitizer, coverage, static-analysis, and memcheck
+helpers from `cmake/`.
+
+## Test
+
+```bash
+cmake -B build -DENI_BUILD_TESTS=ON
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+
+# Python-driven suites
 python run_all_tests.py
 ```
 
----
+## Docs
 
-## 📜 License & Compliance
+See [`docs/`](docs/): `ARCHITECTURE.md`, `BUILDING.md`, `GETTING_STARTED.md`,
+`PRODUCT_OVERVIEW.md`, and `tutorials/`.
 
-Licensed under the MIT License. Aligned with ISO/IEC 25000 software quality standards.
+## License
+
+Licensed under the [MIT License](LICENSE).
