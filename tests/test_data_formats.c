@@ -2,6 +2,7 @@
 // Copyright (c) 2026 EoS Project
 // Tests for data format modules
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>

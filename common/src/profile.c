@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 EoS Project
 
+#include <stdlib.h>
 #include "eni/profile.h"
 #include "eni/json.h"
 #include "eni/log.h"
