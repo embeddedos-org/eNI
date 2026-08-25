@@ -26,9 +26,11 @@ jobs:
           cmake -B build -G Ninja \
             -DCMAKE_C_COMPILER=gcc-12 \
             -DCMAKE_CXX_COMPILER=g++-12 \
-            -DBUILD_TESTS=ON
+            -DENI_BUILD_TESTS=ON
           cmake --build build --parallel $(nproc)
-          cd build && ctest --output-on-failure || true
+          # No `|| true`: a failing test must fail the job. --no-tests=error
+          # catches an empty test set, which ctest otherwise reports as success.
+          cd build && ctest --output-on-failure --no-tests=error
 
   # ── Python Tests ──────────────────────────────────────────────────────────
   test-python:
