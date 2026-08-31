@@ -2,10 +2,10 @@ name: CI — eNI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master, main, develop]
     tags: ["v*"]
   pull_request:
-    branches: [main]
+    branches: [master, main]
 
 jobs:
   # ── C/C++ Tests ───────────────────────────────────────────────────────────
