@@ -17,7 +17,8 @@ Status is one of: `todo`, `in-progress`, `blocked`, `review`, `done`.
 
 | ID | Task | Owner | Verified by | Evidence |
 |----|------|-------|-------------|----------|
-| —  | None yet. | — | — | — |
+| T-001 | CI ran zero tests and reported success | testing | reviewer | `ci.yml` configured with `-DBUILD_TESTS=ON`, but this project's option is `ENI_BUILD_TESTS`, so no test binary was built; `ctest` exits 0 on an empty test set (verified: exit code 0). The step also ended in `|| true`, which would have discarded a real failure as well. Fixed the flag, removed `|| true`, added `--no-tests=error`. CI now builds and runs 40 tests, all passing. |
+| T-002 | Fix a memory leak in the provider test | testing | reviewer | `tests/test_providers.c:29` called `eni_provider_init()`, which allocates provider-private state in `simulator.c:29`, and never called `eni_provider_shutdown()`. LeakSanitizer: 12 bytes direct leak. Shutdown now runs on both the passing and the failing path. 40/40 eNI tests pass under `-fsanitize=address,undefined`. |
 
 ---
 

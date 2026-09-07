@@ -28,7 +28,10 @@ static void test_provider_init(void)
     eni_provider_t prov;
     eni_status_t st = eni_provider_init(&prov, &eni_provider_simulator_ops, "sim0", NULL);
     if (st != ENI_OK) { FAIL("init failed"); return; }
-    if (strcmp(prov.name, "sim0") != 0) { FAIL("wrong name"); return; }
+    /* init allocates provider-private state; shut down on every path out of
+     * here, including the failing one, or the allocation leaks. */
+    if (strcmp(prov.name, "sim0") != 0) { FAIL("wrong name"); eni_provider_shutdown(&prov); return; }
+    eni_provider_shutdown(&prov);
     PASS();
 }
 
