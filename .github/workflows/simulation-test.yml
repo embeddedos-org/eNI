@@ -7,7 +7,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 env:
-  EOSIM_VERSION: "0.1.0"
+  # v0.1.0 has never existed. embeddedos-org/EoSim tags v0.2.0-book and v1.0.0
+  # through v3.0.1; v1.5.0 is the release marked Latest. No EoSim release
+  # publishes a wheel at any version, so both jobs below install from the tag.
+  EOSIM_VERSION: "1.5.0"
 permissions:
   contents: read
 
@@ -26,8 +29,8 @@ jobs:
           python-version: "3.12"
       - name: Install EoSim from source
         run: |
-          git clone --depth 1 --branch v${{ env.EOSIM_VERSION }} https://github.com/embeddedos-org/EoSim.git /tmp/EoSim
-          pip install -e /tmp/EoSim
+          git clone --depth 1 --branch v${{ env.EOSIM_VERSION }} https://github.com/embeddedos-org/EoSim.git "${{ runner.temp }}/eosim"
+          pip install -e "${{ runner.temp }}/eosim"
       - name: Validate platform
         run: eosim list
       - name: Run simulation
@@ -45,7 +48,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install EoSim
-        run: pip install "eosim @ https://github.com/embeddedos-org/EoSim/releases/download/v${{ env.EOSIM_VERSION }}/eosim-${{ env.EOSIM_VERSION }}-py3-none-any.whl"
+        shell: bash
+        run: |
+          git clone --depth 1 --branch v${{ env.EOSIM_VERSION }} https://github.com/embeddedos-org/EoSim.git "${{ runner.temp }}/eosim"
+          pip install -e "${{ runner.temp }}/eosim"
       - name: Validate
         run: eosim list && eosim doctor
   sanity-gate:

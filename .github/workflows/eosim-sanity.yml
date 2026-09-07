@@ -27,12 +27,17 @@ jobs:
 
       - name: Install EoSim from source (pinned)
         env:
-          EOSIM_VERSION: "0.1.0"
+          # v0.1.0 has never existed. embeddedos-org/EoSim tags v0.2.0-book and
+          # v1.0.0 through v3.0.1; v1.5.0 is the release marked Latest.
+          EOSIM_VERSION: "1.5.0"
         shell: bash
         run: |
           set -e
-          git clone --depth 1 --branch v${EOSIM_VERSION} https://github.com/embeddedos-org/EoSim.git /tmp/EoSim
-          pip install -e /tmp/EoSim
+          # runner.temp, not /tmp: this matrix includes windows-2022, where the
+          # step runs under Git Bash but pip is a native Windows interpreter and
+          # cannot resolve a "/tmp/..." path.
+          git clone --depth 1 --branch v${EOSIM_VERSION} https://github.com/embeddedos-org/EoSim.git "${{ runner.temp }}/eosim"
+          pip install -e "${{ runner.temp }}/eosim"
 
       - name: Validate EoSim installation
         shell: bash
