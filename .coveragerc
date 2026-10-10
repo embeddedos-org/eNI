@@ -22,4 +22,8 @@ precision = 2
 # Raised 50 -> 70 on 2026-10-07 with the omit fix above: measured 71.66%
 # with test files excluded (89.29% had counted the tests themselves);
 # headroom for Python 3.11 in CI.
-fail_under = 70
+# Raised 70 -> 85 on 2026-10-08: CI measures 85.42% on master b6f9792
+# (Python Tests, run 37729626356) after the geolocator tests (#41) and
+# the fail-closed quantize rewrite (e8b7dd2); the same command locally
+# gives 85.42%, counting only eni/, tools/, conftest.py, run_all_tests.py.
+fail_under = 85
