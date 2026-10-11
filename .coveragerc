@@ -22,4 +22,10 @@ precision = 2
 # Raised 50 -> 70 on 2026-10-07 with the omit fix above: measured 71.66%
 # with test files excluded (89.29% had counted the tests themselves);
 # headroom for Python 3.11 in CI.
-fail_under = 70
+# Raised 70 -> 85 on 2026-10-11 (closes #44): the quantize_model
+# fail-closed fix (e8b7dd2) plus the new geolocator + quantize
+# validation-path tests took the suite to 93.83% locally (Python 3.12)
+# on master dcf98032; CI measured 85.42% at b6f9792 before those tests
+# landed. Deliberate ~9 points of headroom below the measured total
+# for CI-vs-local Python version drift.
+fail_under = 85
