@@ -3,6 +3,7 @@
 // ISO/IEC 25000 | ISO/IEC/IEEE 15288:2023
 
 #include "eni/stim_safety.h"
+#include <math.h>
 #include <string.h>
 
 void eni_stim_safety_init(eni_stim_safety_t *safety, float max_amp,
@@ -26,6 +27,16 @@ eni_status_t eni_stim_safety_check(const eni_stim_safety_t *safety,
                                    const eni_stim_params_t *params,
                                    uint64_t current_time_ms) {
     if (!safety || !params) return ENI_ERR_INVALID;
+
+    /* F3-1: refuse non-finite and negative amplitudes explicitly,
+     * before any comparison runs. Every amplitude comparison below
+     * is of the form `amplitude > max`: a NaN makes all of them
+     * false and a negative amplitude is below every cap, so both
+     * would otherwise pass this gate and return ENI_OK — a
+     * fail-open edge on the one surface whose failure is physical
+     * (audit phase 3, docs/security-audit-stimulation-output.md). */
+    if (!isfinite(params->amplitude) || params->amplitude < 0.0f)
+        return ENI_ERR_PERMISSION;
 
     /* Absolute hard limits — never overridable */
     if (params->amplitude > ENI_STIM_ABSOLUTE_MAX_AMPLITUDE)

@@ -92,8 +92,8 @@ Verified from `common/src/stim_safety.c` (read in full,
 
 ## Findings register (phase 3, initial)
 
-- **F3-1 (open): the check does not refuse NaN or negative
-  amplitude.** Every amplitude comparison in
+- **F3-1 (fixed 2026-10-16): the check did not refuse NaN or
+  negative amplitude.** Every amplitude comparison in
   `eni_stim_safety_check` is of the form `params->amplitude > max`.
   A NaN amplitude makes every such comparison false, and a
   negative amplitude is below every maximum — both therefore
@@ -105,6 +105,12 @@ Verified from `common/src/stim_safety.c` (read in full,
   pending the phase-2-style code review: the gate should refuse
   non-finite and out-of-range-signed inputs explicitly, with a
   test, rather than inheriting float-comparison luck.
+  **Resolution (2026-10-16):** `eni_stim_safety_check()` now
+  refuses `!isfinite(amplitude)` and `amplitude < 0` explicitly,
+  before any comparison runs, returning `ENI_ERR_PERMISSION`.
+  Evidence: `tests/test_stim_safety.c` gains NaN, +Inf, −Inf and
+  negative-amplitude refusal cases, plus a zero-amplitude case
+  pinning that the gate does not over-refuse.
 - **F3-2 (open): the rate limit assumes a monotonic clock.**
   `elapsed = current_time_ms - safety->last_stim_time_ms` is
   unsigned arithmetic; a clock reading that moves backwards
@@ -120,12 +126,14 @@ Verified from `common/src/stim_safety.c` (read in full,
   frequency as much as amplitude. Either the safety layer gains
   a frequency ceiling, or the audit records, with evidence,
   which layer owns it and what its limit is.
-- **F2-1 status (from phase 2, updated 2026-10-15):** the
-  session-side arena registry F2-1 calls for is being built on
-  the eIPC side in `protocol/tensor_registry.go`
-  (embeddedos-org/eIPC). F2-1 stays open until that lands and
-  its tests are the cited evidence; this document is the
-  eNI-side record of that dependency.
+- **F2-1 status (from phase 2, updated 2026-10-16):** the
+  session-side arena registry F2-1 calls for has landed on the
+  eIPC side: `protocol/tensor_registry.go` in
+  embeddedos-org/eIPC (commit `9ad8edab`, 2026-10-15, CI green)
+  registers validated spans per `ShmName` and refuses
+  overlapping registrations with `ErrTensorOverlap`; its
+  table-driven tests are the cited evidence. This document
+  remains the eNI-side record of that dependency.
 
 ## Evidence items for the next phase
 

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 #include "eni/stim_safety.h"
 
 static int passed = 0;
@@ -88,6 +89,48 @@ static void test_safety_daily_count(void) {
     PASS("safety_daily_count");
 }
 
+static void test_safety_check_nan_amplitude(void) {
+    eni_stim_safety_t safety;
+    eni_stim_safety_init(&safety, 1.5f, 300000, 0, 0);
+    eni_stim_params_t params = {0};
+    params.amplitude = NAN; /* every `>` comparison is false for NaN */
+    params.duration_ms = 100;
+    assert(eni_stim_safety_check(&safety, &params, 0) == ENI_ERR_PERMISSION);
+    PASS("safety_check_nan_amplitude");
+}
+
+static void test_safety_check_infinite_amplitude(void) {
+    eni_stim_safety_t safety;
+    eni_stim_safety_init(&safety, 1.5f, 300000, 0, 0);
+    eni_stim_params_t params = {0};
+    params.duration_ms = 100;
+    params.amplitude = INFINITY;
+    assert(eni_stim_safety_check(&safety, &params, 0) == ENI_ERR_PERMISSION);
+    params.amplitude = -INFINITY;
+    assert(eni_stim_safety_check(&safety, &params, 0) == ENI_ERR_PERMISSION);
+    PASS("safety_check_infinite_amplitude");
+}
+
+static void test_safety_check_negative_amplitude(void) {
+    eni_stim_safety_t safety;
+    eni_stim_safety_init(&safety, 1.5f, 300000, 0, 0);
+    eni_stim_params_t params = {0};
+    params.amplitude = -0.5f; /* below every cap: passed the gate before F3-1 */
+    params.duration_ms = 100;
+    assert(eni_stim_safety_check(&safety, &params, 0) == ENI_ERR_PERMISSION);
+    PASS("safety_check_negative_amplitude");
+}
+
+static void test_safety_check_zero_amplitude_ok(void) {
+    eni_stim_safety_t safety;
+    eni_stim_safety_init(&safety, 1.5f, 300000, 0, 0);
+    eni_stim_params_t params = {0};
+    params.amplitude = 0.0f; /* finite and non-negative: the gate must not over-refuse */
+    params.duration_ms = 100;
+    assert(eni_stim_safety_check(&safety, &params, 0) == ENI_OK);
+    PASS("safety_check_zero_amplitude_ok");
+}
+
 int main(void) {
     printf("=== ENI Stim Safety Tests ===\n");
     test_safety_init();
@@ -97,6 +140,10 @@ int main(void) {
     test_safety_check_absolute_exceed();
     test_safety_rate_limit();
     test_safety_daily_count();
+    test_safety_check_nan_amplitude();
+    test_safety_check_infinite_amplitude();
+    test_safety_check_negative_amplitude();
+    test_safety_check_zero_amplitude_ok();
     printf("\n=== ALL %d TESTS PASSED ===\n", passed);
     return 0;
 }
