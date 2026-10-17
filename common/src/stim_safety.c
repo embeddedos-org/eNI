@@ -50,8 +50,14 @@ eni_status_t eni_stim_safety_check(const eni_stim_safety_t *safety,
     if (params->duration_ms > safety->max_duration_ms)
         return ENI_ERR_PERMISSION;
 
-    /* Rate limiting */
+    /* Rate limiting. F3-2: fail closed on a backwards clock. The
+     * unsigned subtraction wraps to a huge elapsed value when
+     * current_time_ms < last_stim_time_ms, which would pass the
+     * interval check immediately — so a non-monotonic reading is
+     * refused outright instead of being trusted. */
     if (safety->total_count > 0 && safety->min_interval_ms > 0) {
+        if (current_time_ms < safety->last_stim_time_ms)
+            return ENI_ERR_PERMISSION;
         uint64_t elapsed = current_time_ms - safety->last_stim_time_ms;
         if (elapsed < safety->min_interval_ms)
             return ENI_ERR_PERMISSION;

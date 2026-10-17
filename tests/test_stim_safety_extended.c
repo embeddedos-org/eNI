@@ -88,6 +88,23 @@ static void test_safety_rate_limit_one_ms_early(void) {
     PASS("safety_rate_limit_one_ms_early");
 }
 
+static void test_safety_rate_limit_backwards_clock(void) {
+    eni_stim_safety_t safety;
+    eni_stim_safety_init(&safety, 1.0f, 60000, 5000, 100);
+    eni_stim_params_t params = {0};
+    params.amplitude = 0.5f;
+    params.duration_ms = 100;
+    assert(eni_stim_safety_check(&safety, &params, 10000) == ENI_OK);
+    eni_stim_safety_record(&safety, 10000);
+    /* F3-2: a backwards clock reading must fail closed — the unsigned
+     * elapsed subtraction would otherwise wrap and pass the gate. */
+    assert(eni_stim_safety_check(&safety, &params, 9999) == ENI_ERR_PERMISSION);
+    assert(eni_stim_safety_check(&safety, &params, 0) == ENI_ERR_PERMISSION);
+    /* And the gate recovers once the clock is sane again. */
+    assert(eni_stim_safety_check(&safety, &params, 15000) == ENI_OK);
+    PASS("safety_rate_limit_backwards_clock");
+}
+
 static void test_safety_daily_count_exact(void) {
     eni_stim_safety_t safety;
     eni_stim_safety_init(&safety, 1.0f, 60000, 0, 5);
@@ -213,6 +230,7 @@ int main(void) {
     test_safety_duration_exceed();
     test_safety_rate_limit_exact_boundary();
     test_safety_rate_limit_one_ms_early();
+    test_safety_rate_limit_backwards_clock();
     test_safety_daily_count_exact();
     test_safety_daily_reset_restores_full_count();
     test_safety_total_count_preserved_after_daily_reset();
@@ -223,3 +241,4 @@ int main(void) {
     printf("\n=== ALL %d TESTS PASSED ===\n", passed);
     return 0;
 }
+

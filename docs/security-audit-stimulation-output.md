@@ -111,14 +111,20 @@ Verified from `common/src/stim_safety.c` (read in full,
   Evidence: `tests/test_stim_safety.c` gains NaN, +Inf, −Inf and
   negative-amplitude refusal cases, plus a zero-amplitude case
   pinning that the gate does not over-refuse.
-- **F3-2 (open): the rate limit assumes a monotonic clock.**
-  `elapsed = current_time_ms - safety->last_stim_time_ms` is
-  unsigned arithmetic; a clock reading that moves backwards
+- **F3-2 (fixed 2026-10-17): the rate limit assumed a monotonic
+  clock.** `elapsed = current_time_ms - safety->last_stim_time_ms`
+  is unsigned arithmetic; a clock reading that moves backwards
   (host-supplied time, a reset, a wrap of the source clock)
-  makes `elapsed` enormous and the minimum-interval check
-  passes immediately. The control is verified for honest clocks
-  only. A test with a backwards step, and a stated clock-source
-  requirement, are the missing evidence.
+  made `elapsed` enormous and the minimum-interval check passed
+  immediately. The check now refuses outright when
+  `current_time_ms < last_stim_time_ms` (`ENI_ERR_PERMISSION`),
+  before the subtraction runs — fail-closed on a non-monotonic
+  reading. Evidence: `test_safety_rate_limit_backwards_clock` in
+  `tests/test_stim_safety_extended.c` (backwards readings at
+  −1 ms and at 0 refused; the gate recovers at the true interval
+  boundary). The clock-source requirement this implies: callers
+  must supply a monotonic millisecond source; a source that can
+  step backwards now causes refusals, never early passes.
 - **F3-3 (open): `frequency_hz` is unbounded at the safety
   layer.** Amplitude and duration have absolute ceilings;
   frequency has none — not in the check, not as an absolute
