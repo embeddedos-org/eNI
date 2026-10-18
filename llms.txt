@@ -1,0 +1,31 @@
+# eNI
+
+> llms.txt for the eNI repository (embeddedos-org/eNI).
+> Status: the Neural Interface Adapter — neural-signal
+> acquisition and on-device inference for EmbeddedOS, under a
+> formal security audit programme (issue #38).
+
+eNI connects neural interfaces to EmbeddedOS: signal capture,
+stimulation output with hardware safety limits, and on-device
+inference over the signals. Its audit documents (scope, model
+loading, stimulation output, tensor transport) are part of this
+documentation set.
+
+
+## Docs
+
+- [eNI — Product Overview](docs/PRODUCT_OVERVIEW.md)
+- [eNI Architecture](docs/ARCHITECTURE.md)
+- [Building eNI](docs/BUILDING.md)
+- [Getting Started with eNI](docs/GETTING_STARTED.md)
+- [Security audit — scope, threat model, checklist (eNI + eIPC)](docs/audit-scope.md)
+- [Security Audit Proposal — eNI + eIPC (combined)](docs/security-audit-proposal.md)
+- [Security audit — stimulation output threat model (audit phase 3)](docs/security-audit-stimulation-output.md)
+- [Security audit — model loading threat model (audit phase 1)](docs/security-audit-model-loading.md)
+- [Security audit — tensor transport threat model (audit phase 2)](docs/security-audit-tensor-transport.md)
+- [On-device inference: the reference-design evidence pack](docs/on-device-inference-reference.md)
+
+## Machine-readable
+
+- [llms.txt](llms.txt) — this file
+- [llms-full.txt](llms-full.txt) — the docs above concatenated as one document
