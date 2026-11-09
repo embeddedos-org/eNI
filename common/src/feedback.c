@@ -3,6 +3,7 @@
 // ISO/IEC 25000 | ISO/IEC/IEEE 15288:2023
 
 #include "eni/feedback.h"
+#include <math.h>
 #include <string.h>
 
 eni_status_t eni_feedback_controller_init(eni_feedback_controller_t *ctrl,
@@ -10,6 +11,10 @@ eni_status_t eni_feedback_controller_init(eni_feedback_controller_t *ctrl,
                                           float max_amp, uint32_t max_dur_ms) {
     if (!ctrl) return ENI_ERR_INVALID;
     memset(ctrl, 0, sizeof(*ctrl));
+    /* A NaN amplitude ceiling is a configuration error. The safety gate
+     * would fail closed on it (0 mA), but say so here instead of starting
+     * a controller that refuses every stimulation without a reason. */
+    if (isnan(max_amp)) return ENI_ERR_CONFIG;
     ctrl->stimulator = stim;
     eni_stim_safety_init(&ctrl->safety, max_amp, max_dur_ms, 1000, 100);
     ctrl->enabled = true;

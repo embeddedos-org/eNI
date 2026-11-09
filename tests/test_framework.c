@@ -7,6 +7,8 @@
 #include "eni/common.h"
 #include "eni_fw/stream_bus.h"
 #include "eni_fw/router.h"
+#include "eni_fw/feedback.h"
+#include <math.h>
 
 static int tests_run = 0, tests_passed = 0, tests_failed = 0;
 #define TEST(name) do { tests_run++; printf("  TEST %-40s ", #name); } while(0)
@@ -50,12 +52,26 @@ static void test_router_classify(void)
     PASS();
 }
 
+static void test_fw_feedback_init_nan_max(void)
+{
+    TEST(fw_feedback_init_nan_max);
+    eni_fw_feedback_t fb;
+    eni_status_t rc = eni_fw_feedback_init(&fb, NULL, NAN, 1000);
+    if (rc != ENI_ERR_CONFIG) { FAIL("should reject a NaN max_amp with ENI_ERR_CONFIG"); return; }
+    if (fb.initialized) { FAIL("should not be initialized"); return; }
+    rc = eni_fw_feedback_init(&fb, NULL, 1.0f, 1000);
+    if (rc != ENI_OK) { FAIL("a finite max_amp should still initialize"); return; }
+    eni_fw_feedback_shutdown(&fb);
+    PASS();
+}
+
 int main(void)
 {
     printf("=== ENI Framework Tests ===\n\n");
     test_stream_bus_empty();
     test_stream_bus_push_pop();
     test_router_classify();
+    test_fw_feedback_init_nan_max();
     printf("\n=== Results: %d/%d passed, %d failed ===\n",
            tests_passed, tests_run, tests_failed);
     return tests_failed > 0 ? 1 : 0;

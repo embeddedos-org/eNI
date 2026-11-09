@@ -3,6 +3,7 @@
 
 #include "eni_fw/feedback.h"
 #include "eni/log.h"
+#include <math.h>
 #include <string.h>
 
 eni_status_t eni_fw_feedback_init(eni_fw_feedback_t *fb,
@@ -12,6 +13,14 @@ eni_status_t eni_fw_feedback_init(eni_fw_feedback_t *fb,
     if (!fb) return ENI_ERR_INVALID;
 
     memset(fb, 0, sizeof(*fb));
+
+    /* A NaN amplitude ceiling is a configuration error. The safety gate
+     * would fail closed on it (0 mA), but report it here instead of
+     * starting "healthy" and then refusing every stimulation. */
+    if (isnan(max_amp)) {
+        ENI_LOG_ERROR("fw.fb", "max_amp is NaN; refusing to initialize");
+        return ENI_ERR_CONFIG;
+    }
 
     eni_stim_safety_init(&fb->safety, max_amp, max_dur_ms, 100, 1000);
     fb->global_intensity = 1.0f;

@@ -16,6 +16,13 @@ void eni_stim_safety_init(eni_stim_safety_t *safety, float max_amp,
     safety->min_interval_ms = min_interval_ms;
     safety->max_daily_count = max_daily;
 
+    /* A NaN ceiling would make every `amplitude > max` comparison in the
+     * check false, so the configured limit would stop limiting anything
+     * below the absolute ceiling. Fail closed: a ceiling that is not a
+     * number allows no stimulation above 0 mA. */
+    if (isnan(safety->max_amplitude))
+        safety->max_amplitude = 0.0f;
+
     /* Enforce absolute maximums */
     if (safety->max_amplitude > ENI_STIM_ABSOLUTE_MAX_AMPLITUDE)
         safety->max_amplitude = ENI_STIM_ABSOLUTE_MAX_AMPLITUDE;
@@ -44,8 +51,9 @@ eni_status_t eni_stim_safety_check(const eni_stim_safety_t *safety,
     if (params->duration_ms > ENI_STIM_ABSOLUTE_MAX_DURATION_MS)
         return ENI_ERR_PERMISSION;
 
-    /* Configured limits */
-    if (params->amplitude > safety->max_amplitude)
+    /* Configured limits. Written as !(a <= max) so that a NaN max, set on
+     * the public struct after init, refuses instead of allowing. */
+    if (!(params->amplitude <= safety->max_amplitude))
         return ENI_ERR_PERMISSION;
     if (params->duration_ms > safety->max_duration_ms)
         return ENI_ERR_PERMISSION;

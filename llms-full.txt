@@ -737,9 +737,9 @@ Verified from `common/src/stim_safety.c` (read in full,
 
 | Control | Code | Evidence |
 |---|---|---|
-| Amplitude ≤ absolute 2.0 mA and ≤ configured max | `eni_stim_safety_check` | `tests/test_stim_safety.c`, `tests/test_stim_safety_coverage.c`, `tests/test_stim_safety_extended.c` — *verified at unit level* |
+| Amplitude ≤ absolute 2.0 mA and ≤ configured max | `eni_stim_safety_check` | `tests/test_stim_safety.c`, `tests/test_stim_safety_coverage.c`, `tests/test_stim_safety_extended.c` — *verified at unit level*, including a NaN configured max (refused since F3-4) |
 | Duration ≤ absolute 1,800,000 ms and ≤ configured max | same | same — *verified at unit level* |
-| Configured ceilings clamped to absolute at init | `eni_stim_safety_init` | same suites — *verified at unit level* |
+| Configured ceilings clamped to absolute at init | `eni_stim_safety_init` | same suites — *verified at unit level* for finite and +Inf ceilings (+Inf clamps to 2.0 mA: `test_safety_init_inf_max_clamps_absolute`). A NaN ceiling was **not** clamped before F3-4; it is now stored as 0 mA (`test_safety_init_nan_max_stores_zero`), and both feedback init functions return `ENI_ERR_CONFIG` for it |
 | Minimum interval between stimulations | check + `eni_stim_safety_record` | same suites — *verified at unit level, subject to F3-2's clock assumption* |
 | Daily count cap | check + record + `reset_daily` | same suites — *verified at unit level* |
 | Gate is called before output | call sites in `common/src/feedback.c`, `framework/src/feedback.c`; end-to-end in `tests/integration/test_full_pipeline.c` | *Partial:* the feedback paths call the gate; whether **every** `stimulate()` path (including direct driver use) is gated is not evidenced — evidence item 3.1 |
@@ -788,6 +788,29 @@ Verified from `common/src/stim_safety.c` (read in full,
   frequency as much as amplitude. Either the safety layer gains
   a frequency ceiling, or the audit records, with evidence,
   which layer owns it and what its limit is.
+- **F3-4 (fixed 2026-11-09): a NaN configured amplitude ceiling
+  disabled the configured limit.** `eni_stim_safety_init()`
+  clamped the ceiling with `max_amplitude > 2.0`, which is false
+  for NaN, so a NaN ceiling was stored as is; the check then
+  compared `params->amplitude > max_amplitude`, false for every
+  amplitude, so only the 2.0 mA absolute ceiling remained (a
+  device configured for 1.0 mA allowed 1.9 mA). The same
+  float-comparison edge as F3-1, on the configured side.
+  **Resolution:** init stores a NaN ceiling as 0 mA (fail closed);
+  the check is written `!(amplitude <= max_amplitude)`, so a NaN
+  written to the public struct after init is refused too; and
+  `eni_feedback_controller_init()` and `eni_fw_feedback_init()`
+  return `ENI_ERR_CONFIG` for a NaN `max_amp` instead of starting
+  a controller that refuses everything without a reason.
+  Evidence: `tests/test_stim_safety.c`
+  (`test_safety_init_nan_max_refuses`,
+  `test_safety_init_nan_max_stores_zero`,
+  `test_safety_check_nan_configured_max_refuses`),
+  `tests/test_fw_feedback.c` (`test_feedback_init_nan_max`) and
+  `tests/test_framework.c` (`test_fw_feedback_init_nan_max`).
+  Not covered: a +Inf ceiling still clamps to the 2.0 mA absolute
+  maximum (unchanged), and `frequency_hz` remains unbounded,
+  including NaN, ±Inf and negative values (F3-3).
 - **F2-1 status (from phase 2, updated 2026-10-16):** the
   session-side arena registry F2-1 calls for has landed on the
   eIPC side: `protocol/tensor_registry.go` in

@@ -131,6 +131,51 @@ static void test_safety_check_zero_amplitude_ok(void) {
     PASS("safety_check_zero_amplitude_ok");
 }
 
+static void test_safety_init_nan_max_refuses(void) {
+    /* A NaN configured ceiling must not disable the configured limit:
+     * `x > NaN` is false for every x, so a NaN max_amplitude used to let
+     * everything up to the 2.0 mA absolute ceiling through. */
+    eni_stim_safety_t safety;
+    eni_stim_safety_init(&safety, NAN, 300000, 0, 0);
+    eni_stim_params_t params = {0};
+    params.amplitude = 1.9f;
+    params.duration_ms = 100;
+    assert(eni_stim_safety_check(&safety, &params, 0) == ENI_ERR_PERMISSION);
+    PASS("safety_init_nan_max_refuses");
+}
+
+static void test_safety_init_nan_max_stores_zero(void) {
+    /* Pins the init clamp itself: the check-side `!(a <= max)` would
+     * refuse a NaN ceiling anyway, so only this assertion notices if
+     * init stops replacing NaN with 0 mA. */
+    eni_stim_safety_t safety;
+    eni_stim_safety_init(&safety, NAN, 300000, 0, 0);
+    assert(!isnan(safety.max_amplitude));
+    assert(safety.max_amplitude == 0.0f);
+    PASS("safety_init_nan_max_stores_zero");
+}
+
+static void test_safety_init_inf_max_clamps_absolute(void) {
+    /* +Inf is clamped to the absolute ceiling, not treated like NaN. */
+    eni_stim_safety_t safety;
+    eni_stim_safety_init(&safety, INFINITY, 300000, 0, 0);
+    assert(safety.max_amplitude == ENI_STIM_ABSOLUTE_MAX_AMPLITUDE);
+    PASS("safety_init_inf_max_clamps_absolute");
+}
+
+static void test_safety_check_nan_configured_max_refuses(void) {
+    /* The struct is public; a NaN written to max_amplitude after init
+     * must also fail closed at the gate. */
+    eni_stim_safety_t safety;
+    eni_stim_safety_init(&safety, 1.0f, 300000, 0, 0);
+    safety.max_amplitude = NAN;
+    eni_stim_params_t params = {0};
+    params.amplitude = 1.9f;
+    params.duration_ms = 100;
+    assert(eni_stim_safety_check(&safety, &params, 0) == ENI_ERR_PERMISSION);
+    PASS("safety_check_nan_configured_max_refuses");
+}
+
 int main(void) {
     printf("=== ENI Stim Safety Tests ===\n");
     test_safety_init();
@@ -144,6 +189,10 @@ int main(void) {
     test_safety_check_infinite_amplitude();
     test_safety_check_negative_amplitude();
     test_safety_check_zero_amplitude_ok();
+    test_safety_init_nan_max_refuses();
+    test_safety_init_nan_max_stores_zero();
+    test_safety_init_inf_max_clamps_absolute();
+    test_safety_check_nan_configured_max_refuses();
     printf("\n=== ALL %d TESTS PASSED ===\n", passed);
     return 0;
 }

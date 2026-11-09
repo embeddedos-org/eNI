@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "eni/common.h"
 #include "eni/feedback.h"
 
@@ -67,6 +68,17 @@ static void test_feedback_init_null(void)
     TEST(feedback_init_null);
     eni_status_t rc = eni_feedback_controller_init(NULL, &g_mock_stim, 1.0f, 500);
     if (rc != ENI_ERR_INVALID) { FAIL("should reject NULL"); return; }
+    PASS();
+}
+
+/* ── Test: init with a NaN amplitude ceiling ── */
+static void test_feedback_init_nan_max(void)
+{
+    TEST(feedback_init_nan_max);
+    eni_feedback_controller_t ctrl;
+    eni_status_t rc = eni_feedback_controller_init(&ctrl, &g_mock_stim, NAN, 500);
+    if (rc != ENI_ERR_CONFIG) { FAIL("should reject a NaN max_amp with ENI_ERR_CONFIG"); return; }
+    if (ctrl.enabled) { FAIL("should not be enabled"); return; }
     PASS();
 }
 
@@ -293,6 +305,7 @@ int main(void)
     printf("=== ENI Feedback Controller Tests ===\n\n");
     test_feedback_init();
     test_feedback_init_null();
+    test_feedback_init_nan_max();
     test_feedback_add_rule();
     test_feedback_add_rule_invalid();
     test_feedback_evaluate_match();
