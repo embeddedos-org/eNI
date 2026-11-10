@@ -2,6 +2,7 @@
 // eNI EIPC Streaming — Real-time neural data streaming implementation
 
 #include "eni/eipc_stream.h"
+#include <stdio.h>
 #include <string.h>
 
 #ifdef _WIN32
