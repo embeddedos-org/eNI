@@ -10,7 +10,8 @@ setup(
     license="MIT",
     packages=find_packages(),
     python_requires=">=3.8",
-    install_requires=[],
+    # eni/core.py imports numpy at module level, so "import eni" needs it.
+    install_requires=["numpy>=1.20"],
     extras_require={
         "numpy": ["numpy>=1.20"],
         "viz": ["matplotlib>=3.5", "numpy>=1.20"],
