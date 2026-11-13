@@ -9,15 +9,19 @@
 #include <stdlib.h>
 #include <math.h>
 
-static void read_fixed(FILE *fp, char *buf, int len)
+/* Read a fixed-width ASCII header field of len bytes (at most 80) into buf,
+ * which holds cap bytes. All len characters are kept when buf has room for
+ * them and the terminator; trailing spaces are trimmed. */
+static void read_fixed(FILE *fp, char *buf, size_t cap, int len)
 {
-    size_t n = fread(buf, 1, (size_t)len, fp);
-    /* Null-terminate within bounds: write at most at buf[len-1] */
-    int end = (int)(n < (size_t)len ? n : (size_t)(len - 1));
+    char field[81];
+    size_t n = fread(field, 1, (size_t)len, fp);
+    size_t end = n < cap - 1 ? n : cap - 1;
+    memcpy(buf, field, end);
     buf[end] = '\0';
     /* Trim trailing spaces */
-    for (int i = end - 1; i >= 0 && buf[i] == ' '; i--)
-        buf[i] = '\0';
+    for (size_t i = end; i > 0 && buf[i - 1] == ' '; i--)
+        buf[i - 1] = '\0';
 }
 
 static void write_fixed(FILE *fp, const char *str, int len)
@@ -74,24 +78,24 @@ eni_status_t eni_edf_open(eni_edf_file_t *edf, const char *path)
 
     /* Read main header (256 bytes) */
     char buf[81];
-    read_fixed(edf->fp, buf, 8);  /* version */
-    read_fixed(edf->fp, edf->header.patient, 80);
-    read_fixed(edf->fp, edf->header.recording, 80);
-    read_fixed(edf->fp, edf->header.start_date, 8);
-    read_fixed(edf->fp, edf->header.start_time, 8);
+    read_fixed(edf->fp, buf, sizeof(buf), 8);  /* version */
+    read_fixed(edf->fp, edf->header.patient, sizeof(edf->header.patient), 80);
+    read_fixed(edf->fp, edf->header.recording, sizeof(edf->header.recording), 80);
+    read_fixed(edf->fp, edf->header.start_date, sizeof(edf->header.start_date), 8);
+    read_fixed(edf->fp, edf->header.start_time, sizeof(edf->header.start_time), 8);
 
-    read_fixed(edf->fp, buf, 8);  /* header size in bytes */
+    read_fixed(edf->fp, buf, sizeof(buf), 8);  /* header size in bytes */
     int header_bytes = atoi(buf);
 
-    read_fixed(edf->fp, buf, 44); /* reserved / EDF+C or EDF+D */
+    read_fixed(edf->fp, buf, sizeof(buf), 44); /* reserved / EDF+C or EDF+D */
 
-    read_fixed(edf->fp, buf, 8);  /* number of data records */
+    read_fixed(edf->fp, buf, sizeof(buf), 8);  /* number of data records */
     edf->header.num_records = atoll(buf);
 
-    read_fixed(edf->fp, buf, 8);  /* duration of data record */
+    read_fixed(edf->fp, buf, sizeof(buf), 8);  /* duration of data record */
     edf->header.record_duration = atof(buf);
 
-    read_fixed(edf->fp, buf, 4);  /* number of signals */
+    read_fixed(edf->fp, buf, sizeof(buf), 4);  /* number of signals */
     edf->header.num_channels = atoi(buf);
 
     if (edf->header.num_channels <= 0 || edf->header.num_channels > ENI_DATA_MAX_CHANNELS) {
@@ -103,38 +107,38 @@ eni_status_t eni_edf_open(eni_edf_file_t *edf, const char *path)
 
     /* Read signal headers */
     for (int i = 0; i < ns; i++)
-        read_fixed(edf->fp, edf->header.channels[i].label, 16);
+        read_fixed(edf->fp, edf->header.channels[i].label, sizeof(edf->header.channels[i].label), 16);
     for (int i = 0; i < ns; i++)
-        read_fixed(edf->fp, edf->header.channels[i].transducer, 80);
+        read_fixed(edf->fp, edf->header.channels[i].transducer, sizeof(edf->header.channels[i].transducer), 80);
     for (int i = 0; i < ns; i++)
-        read_fixed(edf->fp, edf->header.channels[i].physical_dim, 8);
+        read_fixed(edf->fp, edf->header.channels[i].physical_dim, sizeof(edf->header.channels[i].physical_dim), 8);
     for (int i = 0; i < ns; i++) {
-        read_fixed(edf->fp, buf, 8);
+        read_fixed(edf->fp, buf, sizeof(buf), 8);
         edf->header.channels[i].physical_min = atof(buf);
     }
     for (int i = 0; i < ns; i++) {
-        read_fixed(edf->fp, buf, 8);
+        read_fixed(edf->fp, buf, sizeof(buf), 8);
         edf->header.channels[i].physical_max = atof(buf);
     }
     for (int i = 0; i < ns; i++) {
-        read_fixed(edf->fp, buf, 8);
+        read_fixed(edf->fp, buf, sizeof(buf), 8);
         edf->header.channels[i].digital_min = atoi(buf);
     }
     for (int i = 0; i < ns; i++) {
-        read_fixed(edf->fp, buf, 8);
+        read_fixed(edf->fp, buf, sizeof(buf), 8);
         edf->header.channels[i].digital_max = atoi(buf);
     }
     for (int i = 0; i < ns; i++)
-        read_fixed(edf->fp, buf, 80); /* prefiltering — skip */
+        read_fixed(edf->fp, buf, sizeof(buf), 80); /* prefiltering — skip */
     for (int i = 0; i < ns; i++) {
-        read_fixed(edf->fp, buf, 8);
+        read_fixed(edf->fp, buf, sizeof(buf), 8);
         edf->header.channels[i].samples_per_record = atoi(buf);
         if (edf->header.record_duration > 0.0)
             edf->header.channels[i].sample_rate =
                 edf->header.channels[i].samples_per_record / edf->header.record_duration;
     }
     for (int i = 0; i < ns; i++)
-        read_fixed(edf->fp, buf, 32); /* reserved per signal — skip */
+        read_fixed(edf->fp, buf, sizeof(buf), 32); /* reserved per signal — skip */
 
     /* Calculate record size and data offset */
     edf->record_size = 0;

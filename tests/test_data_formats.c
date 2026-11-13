@@ -7,8 +7,10 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
+#include <stdbool.h>
 #include "eni/data_format.h"
 #include "eni/edf.h"
+#include "eni/bdf.h"
 #include "eni/annotation.h"
 
 static int tests_run = 0, tests_passed = 0, tests_failed = 0;
@@ -121,6 +123,85 @@ static void test_edf_write_read_roundtrip(void)
     PASS();
 }
 
+/* Header fields that use every byte of their fixed width must read back
+ * whole: dd.mm.yy and hh.mm.ss are always 8 characters, a 16-character label
+ * fills its field, and "%.6g" writes -3276.75 as 8 characters. */
+static void fill_full_width_header(eni_data_header_t *hdr)
+{
+    eni_data_header_init(hdr);
+    hdr->num_channels = 1;
+    hdr->record_duration = 1.0;
+    strncpy(hdr->start_date, "13.11.26", sizeof(hdr->start_date) - 1);
+    strncpy(hdr->start_time, "22.37.05", sizeof(hdr->start_time) - 1);
+    strncpy(hdr->channels[0].label, "EEG Fpz-Cz left1", ENI_DATA_MAX_LABEL - 1);
+    hdr->channels[0].physical_min = -3276.75;
+    hdr->channels[0].physical_max = 3276.75;
+    hdr->channels[0].digital_min = -32768;
+    hdr->channels[0].digital_max = 32767;
+    hdr->channels[0].samples_per_record = 4;
+}
+
+static bool full_width_header_ok(const eni_data_header_t *got)
+{
+    if (strcmp(got->start_date, "13.11.26") != 0 ||
+        strcmp(got->start_time, "22.37.05") != 0 ||
+        strcmp(got->channels[0].label, "EEG Fpz-Cz left1") != 0 ||
+        got->channels[0].physical_min != -3276.75 ||
+        got->channels[0].physical_max != 3276.75) {
+        char msg[200];
+        snprintf(msg, sizeof(msg), "read back date='%s' time='%s' label='%s' pmin=%g pmax=%g",
+                 got->start_date, got->start_time, got->channels[0].label,
+                 got->channels[0].physical_min, got->channels[0].physical_max);
+        FAIL(msg);
+        return false;
+    }
+    return true;
+}
+
+static void test_edf_header_full_width_fields(void)
+{
+    TEST(edf_header_full_width_fields);
+    const char *path = "/tmp/eni_test_full_width.edf";
+    eni_data_header_t hdr;
+    fill_full_width_header(&hdr);
+
+    eni_edf_file_t edf;
+    assert(eni_edf_create(&edf, path, &hdr) == ENI_OK);
+    double samples[4] = {0.0, 1.0, -1.0, 0.5};
+    assert(eni_edf_write_record(&edf, samples, 4) == ENI_OK);
+    assert(eni_edf_finalize(&edf) == ENI_OK);
+
+    eni_edf_file_t rd;
+    assert(eni_edf_open(&rd, path) == ENI_OK);
+    bool ok = full_width_header_ok(&rd.header);
+    eni_edf_close(&rd);
+    remove(path);
+    if (ok) PASS();
+}
+
+static void test_bdf_header_full_width_fields(void)
+{
+    TEST(bdf_header_full_width_fields);
+    const char *path = "/tmp/eni_test_full_width.bdf";
+    eni_data_header_t hdr;
+    fill_full_width_header(&hdr);
+    hdr.channels[0].digital_min = -8388608;
+    hdr.channels[0].digital_max = 8388607;
+
+    eni_bdf_file_t bdf;
+    assert(eni_bdf_create(&bdf, path, &hdr) == ENI_OK);
+    double samples[4] = {0.0, 1.0, -1.0, 0.5};
+    assert(eni_bdf_write_record(&bdf, samples, 4) == ENI_OK);
+    assert(eni_bdf_finalize(&bdf) == ENI_OK);
+
+    eni_bdf_file_t rd;
+    assert(eni_bdf_open(&rd, path) == ENI_OK);
+    bool ok = full_width_header_ok(&rd.header);
+    eni_bdf_close(&rd);
+    remove(path);
+    if (ok) PASS();
+}
+
 static void test_annotation_system(void)
 {
     TEST(annotation_system);
@@ -156,6 +237,8 @@ int main(void)
     test_format_names();
     test_edf_digital_physical_conversion();
     test_edf_write_read_roundtrip();
+    test_edf_header_full_width_fields();
+    test_bdf_header_full_width_fields();
     test_annotation_system();
     printf("\n%d/%d tests passed\n", tests_passed, tests_run);
     return tests_failed > 0 ? 1 : 0;

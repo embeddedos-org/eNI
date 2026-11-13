@@ -9,12 +9,16 @@
 #include <stdlib.h>
 #include <math.h>
 
-static void bdf_read_fixed(FILE *fp, char *buf, int len)
+/* Read a fixed-width header field of len bytes (at most 80) into buf, which
+ * holds cap bytes, keeping every character that fits and trimming spaces. */
+static void bdf_read_fixed(FILE *fp, char *buf, size_t cap, int len)
 {
-    size_t n = fread(buf, 1, (size_t)len, fp);
-    int end = (int)(n < (size_t)len ? n : (size_t)(len - 1));
+    char field[81];
+    size_t n = fread(field, 1, (size_t)len, fp);
+    size_t end = n < cap - 1 ? n : cap - 1;
+    memcpy(buf, field, end);
     buf[end] = '\0';
-    for (int i = end - 1; i >= 0 && buf[i] == ' '; i--) buf[i] = '\0';
+    for (size_t i = end; i > 0 && buf[i - 1] == ' '; i--) buf[i - 1] = '\0';
 }
 
 static void bdf_write_fixed(FILE *fp, const char *str, int len)
@@ -70,22 +74,22 @@ eni_status_t eni_bdf_open(eni_bdf_file_t *bdf, const char *path)
     char buf[81];
     /* BDF: 0xFF + "BIOSEMI" (8 bytes) */
     fread(buf, 1, 8, bdf->fp);
-    bdf_read_fixed(bdf->fp, bdf->header.patient, 80);
-    bdf_read_fixed(bdf->fp, bdf->header.recording, 80);
-    bdf_read_fixed(bdf->fp, bdf->header.start_date, 8);
-    bdf_read_fixed(bdf->fp, bdf->header.start_time, 8);
+    bdf_read_fixed(bdf->fp, bdf->header.patient, sizeof(bdf->header.patient), 80);
+    bdf_read_fixed(bdf->fp, bdf->header.recording, sizeof(bdf->header.recording), 80);
+    bdf_read_fixed(bdf->fp, bdf->header.start_date, sizeof(bdf->header.start_date), 8);
+    bdf_read_fixed(bdf->fp, bdf->header.start_time, sizeof(bdf->header.start_time), 8);
 
-    bdf_read_fixed(bdf->fp, buf, 8);
+    bdf_read_fixed(bdf->fp, buf, sizeof(buf), 8);
     int header_bytes = atoi(buf);
 
-    bdf_read_fixed(bdf->fp, buf, 44); /* reserved */
-    bdf_read_fixed(bdf->fp, buf, 8);
+    bdf_read_fixed(bdf->fp, buf, sizeof(buf), 44); /* reserved */
+    bdf_read_fixed(bdf->fp, buf, sizeof(buf), 8);
     bdf->header.num_records = atoll(buf);
 
-    bdf_read_fixed(bdf->fp, buf, 8);
+    bdf_read_fixed(bdf->fp, buf, sizeof(buf), 8);
     bdf->header.record_duration = atof(buf);
 
-    bdf_read_fixed(bdf->fp, buf, 4);
+    bdf_read_fixed(bdf->fp, buf, sizeof(buf), 4);
     bdf->header.num_channels = atoi(buf);
 
     if (bdf->header.num_channels <= 0 || bdf->header.num_channels > ENI_DATA_MAX_CHANNELS) {
@@ -94,22 +98,22 @@ eni_status_t eni_bdf_open(eni_bdf_file_t *bdf, const char *path)
 
     int ns = bdf->header.num_channels;
 
-    for (int i = 0; i < ns; i++) bdf_read_fixed(bdf->fp, bdf->header.channels[i].label, 16);
-    for (int i = 0; i < ns; i++) bdf_read_fixed(bdf->fp, bdf->header.channels[i].transducer, 80);
-    for (int i = 0; i < ns; i++) bdf_read_fixed(bdf->fp, bdf->header.channels[i].physical_dim, 8);
-    for (int i = 0; i < ns; i++) { bdf_read_fixed(bdf->fp, buf, 8); bdf->header.channels[i].physical_min = atof(buf); }
-    for (int i = 0; i < ns; i++) { bdf_read_fixed(bdf->fp, buf, 8); bdf->header.channels[i].physical_max = atof(buf); }
-    for (int i = 0; i < ns; i++) { bdf_read_fixed(bdf->fp, buf, 8); bdf->header.channels[i].digital_min = atoi(buf); }
-    for (int i = 0; i < ns; i++) { bdf_read_fixed(bdf->fp, buf, 8); bdf->header.channels[i].digital_max = atoi(buf); }
-    for (int i = 0; i < ns; i++) bdf_read_fixed(bdf->fp, buf, 80);
+    for (int i = 0; i < ns; i++) bdf_read_fixed(bdf->fp, bdf->header.channels[i].label, sizeof(bdf->header.channels[i].label), 16);
+    for (int i = 0; i < ns; i++) bdf_read_fixed(bdf->fp, bdf->header.channels[i].transducer, sizeof(bdf->header.channels[i].transducer), 80);
+    for (int i = 0; i < ns; i++) bdf_read_fixed(bdf->fp, bdf->header.channels[i].physical_dim, sizeof(bdf->header.channels[i].physical_dim), 8);
+    for (int i = 0; i < ns; i++) { bdf_read_fixed(bdf->fp, buf, sizeof(buf), 8); bdf->header.channels[i].physical_min = atof(buf); }
+    for (int i = 0; i < ns; i++) { bdf_read_fixed(bdf->fp, buf, sizeof(buf), 8); bdf->header.channels[i].physical_max = atof(buf); }
+    for (int i = 0; i < ns; i++) { bdf_read_fixed(bdf->fp, buf, sizeof(buf), 8); bdf->header.channels[i].digital_min = atoi(buf); }
+    for (int i = 0; i < ns; i++) { bdf_read_fixed(bdf->fp, buf, sizeof(buf), 8); bdf->header.channels[i].digital_max = atoi(buf); }
+    for (int i = 0; i < ns; i++) bdf_read_fixed(bdf->fp, buf, sizeof(buf), 80);
     for (int i = 0; i < ns; i++) {
-        bdf_read_fixed(bdf->fp, buf, 8);
+        bdf_read_fixed(bdf->fp, buf, sizeof(buf), 8);
         bdf->header.channels[i].samples_per_record = atoi(buf);
         if (bdf->header.record_duration > 0.0)
             bdf->header.channels[i].sample_rate =
                 bdf->header.channels[i].samples_per_record / bdf->header.record_duration;
     }
-    for (int i = 0; i < ns; i++) bdf_read_fixed(bdf->fp, buf, 32);
+    for (int i = 0; i < ns; i++) bdf_read_fixed(bdf->fp, buf, sizeof(buf), 32);
 
     bdf->record_size = 0;
     for (int i = 0; i < ns; i++)
