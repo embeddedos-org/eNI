@@ -134,7 +134,11 @@ eni_status_t eni_player_pause(eni_player_t *player)
 {
     if (!player) return ENI_ERR_INVALID;
     eni_mutex_lock(&player->lock);
-    player->state = ENI_PLAYER_PAUSED;
+    /* Only a running playback can be paused. play() treats PAUSED as "the
+     * thread is alive, just resume it", so marking an idle or stopped player
+     * PAUSED made the next play() return ENI_OK without starting anything. */
+    if (player->state == ENI_PLAYER_PLAYING)
+        player->state = ENI_PLAYER_PAUSED;
     eni_mutex_unlock(&player->lock);
     return ENI_OK;
 }
