@@ -300,6 +300,11 @@ if(ENI_BUILD_DATA_FORMATS)
     endif()
     add_test(NAME eni_data_format_tests COMMAND eni_test_data_formats)
     set_tests_properties(eni_data_format_tests PROPERTIES LABELS "unit")
+
+    add_executable(eni_test_player test_player.c)
+    target_link_libraries(eni_test_player PRIVATE eni_common eni_platform)
+    add_test(NAME eni_player_tests COMMAND eni_test_player)
+    set_tests_properties(eni_player_tests PROPERTIES LABELS "unit")
 endif()
 
 # Session, calibration, profile tests
