@@ -98,6 +98,41 @@ static void test_parse_escape(void)
     PASS();
 }
 
+static void test_parse_unicode_escape(void)
+{
+    TEST(json_parse_unicode_escape);
+    /* "A", "\u00e9" (e acute), "\u20ac" (euro sign) and the surrogate
+     * pair "\ud83d\ude00" must come back as UTF-8, not as "u00e9". */
+    const char *json = "{\"s\": \"\\u0041\\u00e9\\u20ac\\ud83d\\ude00\"}";
+    eni_json_value_t root;
+    eni_status_t rc = eni_json_parse(json, &root);
+    if (rc != ENI_OK) { FAIL("parse failed"); return; }
+
+    const char *s = eni_json_get_string(&root, "s", NULL);
+    const char *want = "A\xc3\xa9\xe2\x82\xac\xf0\x9f\x98\x80";
+    if (s == NULL || strcmp(s, want) != 0) {
+        printf("got \"%s\" ", s ? s : "(null)");
+        eni_json_free(&root);
+        FAIL("\\u escapes not decoded to UTF-8");
+        return;
+    }
+    eni_json_free(&root);
+    PASS();
+}
+
+static void test_parse_bad_unicode_escape(void)
+{
+    TEST(json_parse_bad_unicode_escape);
+    eni_json_value_t root;
+    /* Not four hex digits, and a lone low surrogate: both are invalid. */
+    eni_status_t rc1 = eni_json_parse("{\"s\": \"\\u12G4\"}", &root);
+    eni_json_free(&root);
+    eni_status_t rc2 = eni_json_parse("{\"s\": \"\\ude00\"}", &root);
+    eni_json_free(&root);
+    if (rc1 == ENI_OK || rc2 == ENI_OK) { FAIL("invalid \\u escape accepted"); return; }
+    PASS();
+}
+
 static void test_parse_defaults(void)
 {
     TEST(json_get_defaults);
@@ -120,6 +155,8 @@ int main(void)
     test_parse_array();
     test_parse_null();
     test_parse_escape();
+    test_parse_unicode_escape();
+    test_parse_bad_unicode_escape();
     test_parse_defaults();
     printf("\n%d/%d tests passed\n", tests_passed, tests_run);
     return tests_failed > 0 ? 1 : 0;
