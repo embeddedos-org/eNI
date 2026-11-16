@@ -37,6 +37,68 @@ static bool expect(eni_json_parser_t *p, char c)
 
 static eni_status_t parse_value(eni_json_parser_t *p, eni_json_value_t *val);
 
+/* Read the four hex digits of a \uXXXX escape. */
+static bool read_hex4(eni_json_parser_t *p, unsigned *out)
+{
+    if (p->len - p->pos < 4) return false;
+    unsigned v = 0;
+    for (int k = 0; k < 4; k++) {
+        char h = p->src[p->pos + k];
+        v <<= 4;
+        if (h >= '0' && h <= '9')      v |= (unsigned)(h - '0');
+        else if (h >= 'a' && h <= 'f') v |= (unsigned)(h - 'a' + 10);
+        else if (h >= 'A' && h <= 'F') v |= (unsigned)(h - 'A' + 10);
+        else return false;
+    }
+    p->pos += 4;
+    *out = v;
+    return true;
+}
+
+/* Decode the code point of a \uXXXX escape (the "\u" is already consumed),
+ * joining a UTF-16 surrogate pair into one code point. */
+static bool read_unicode_escape(eni_json_parser_t *p, unsigned *cp)
+{
+    unsigned hi;
+    if (!read_hex4(p, &hi)) return false;
+    if (hi >= 0xDC00 && hi <= 0xDFFF) return false;      /* lone low surrogate */
+    if (hi >= 0xD800 && hi <= 0xDBFF) {
+        unsigned lo;
+        if (p->len - p->pos < 2 || p->src[p->pos] != '\\' || p->src[p->pos + 1] != 'u')
+            return false;                                 /* high surrogate alone */
+        p->pos += 2;
+        if (!read_hex4(p, &lo) || lo < 0xDC00 || lo > 0xDFFF) return false;
+        *cp = 0x10000 + ((hi - 0xD800) << 10) + (lo - 0xDC00);
+        return true;
+    }
+    *cp = hi;
+    return true;
+}
+
+static int utf8_encode(unsigned cp, char out[4])
+{
+    if (cp < 0x80) {
+        out[0] = (char)cp;
+        return 1;
+    }
+    if (cp < 0x800) {
+        out[0] = (char)(0xC0 | (cp >> 6));
+        out[1] = (char)(0x80 | (cp & 0x3F));
+        return 2;
+    }
+    if (cp < 0x10000) {
+        out[0] = (char)(0xE0 | (cp >> 12));
+        out[1] = (char)(0x80 | ((cp >> 6) & 0x3F));
+        out[2] = (char)(0x80 | (cp & 0x3F));
+        return 3;
+    }
+    out[0] = (char)(0xF0 | (cp >> 18));
+    out[1] = (char)(0x80 | ((cp >> 12) & 0x3F));
+    out[2] = (char)(0x80 | ((cp >> 6) & 0x3F));
+    out[3] = (char)(0x80 | (cp & 0x3F));
+    return 4;
+}
+
 static eni_status_t parse_string(eni_json_parser_t *p, char *out, int max_len)
 {
     if (!expect(p, '"')) {
@@ -45,6 +107,7 @@ static eni_status_t parse_string(eni_json_parser_t *p, char *out, int max_len)
     }
 
     int i = 0;
+    bool full = false;  /* a multi-byte character did not fit: stop here */
     while (p->pos < p->len && p->src[p->pos] != '"') {
         char c = p->src[p->pos++];
         if (c == '\\' && p->pos < p->len) {
@@ -58,10 +121,27 @@ static eni_status_t parse_string(eni_json_parser_t *p, char *out, int max_len)
             case 'n':  c = '\n'; break;
             case 'r':  c = '\r'; break;
             case 't':  c = '\t'; break;
+            case 'u': {
+                unsigned cp;
+                char utf8[4];
+                if (!read_unicode_escape(p, &cp)) {
+                    snprintf(p->error, sizeof(p->error), "invalid \\u escape at pos %d", p->pos);
+                    return ENI_ERR_CONFIG;
+                }
+                int n = utf8_encode(cp, utf8);
+                /* Keep a truncated string valid UTF-8: all bytes or none. */
+                if (!full && i + n <= max_len - 1) {
+                    memcpy(&out[i], utf8, (size_t)n);
+                    i += n;
+                } else {
+                    full = true;
+                }
+                continue;
+            }
             default:   c = esc; break;
             }
         }
-        if (i < max_len - 1) out[i++] = c;
+        if (!full && i < max_len - 1) out[i++] = c;
     }
     out[i] = '\0';
 
