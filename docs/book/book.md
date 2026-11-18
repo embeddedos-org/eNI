@@ -80,7 +80,7 @@ We hope this reference empowers you to build the next generation of neural-enabl
 
 ## 1.1 What is ENI?
 
-ENI (Embedded Neural Interface) is a real-time neural, BCI, and assistive-input integration layer for the EoS embedded operating system [@wolpaw2012]. It provides a standardized, vendor-neutral framework to integrate brain-computer interfaces, neural decoders, and assistive input systems into embedded platforms.
+ENI (Embedded Neural Interface) is a real-time neural, BCI, and assistive-input integration layer for the EoS embedded operating system [@wolpaw2002]. It provides a standardized, vendor-neutral framework to integrate brain-computer interfaces, neural decoders, and assistive input systems into embedded platforms.
 
 The framework handles the complete pipeline from raw neural signal acquisition through digital signal processing, feature extraction, neural network inference, intent decoding, and actuation — all within the deterministic timing constraints required by embedded and safety-critical systems.
 
@@ -458,7 +458,7 @@ eni_provider_register(&mydevice_ops);
 
 ## 5.1 Overview
 
-The Neuralink provider enables direct integration with Neuralink N1 brain-computer interface implants [@neuralink2019]. It supports:
+The Neuralink provider enables direct integration with Neuralink N1 brain-computer interface implants [@musk2019]. It supports:
 
 - **1024 electrode channels** at 30 kHz sample rate
 - **Packet-based streaming** with callback support

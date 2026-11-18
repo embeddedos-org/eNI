@@ -152,6 +152,18 @@ jobs:
             CITE_ARGS="--citeproc --bibliography=references.bib"
           fi
 
+          # NB: no fancyhdr in header-includes below: Eisvogel is
+          # KOMA-Script based and already loads scrlayer-scrpage, which
+          # defines chead; loading fancyhdr dies with Command chead
+          # already defined. Eisvogel's own headers apply.
+          # Also: Eisvogel 2.4.0 predates pandoc 3.6 citeproc, which emits
+          # bibitem inside CSLReferences and uses citeproctext, while the
+          # template defines CSLReferences as a plain group (no list), so
+          # bibitem is lonely. The header-includes below redefine it as a
+          # list, exactly as pandoc's default template does, and define
+          # citeproctext. NOTE: no percent signs allowed inside the
+          # header-includes value: after shell joining, a percent comments
+          # out the rest of the value.
           pandoc \
             book.md \
             -o "${{ steps.meta.outputs.pdf_name }}" \
@@ -194,11 +206,8 @@ jobs:
               \captionsetup{font=small,labelfont=bf,format=hang}\
               \captionsetup[figure]{name=Figure}\
               \captionsetup[table]{name=Table}\
-              % NB: no fancyhdr here. Eisvogel is KOMA-Script based and \
-              % already loads scrlayer-scrpage, which defines chead; \
-              % loading fancyhdr dies with Command chead already defined. \
-              % Eisvogel's own headers apply; custom headers would need \
-              % KOMA setters (chead etc.), not fancyhdr.
+              \renewenvironment{CSLReferences}[2]{\begin{list}{}{\setlength{\itemindent}{0pt}\setlength{\leftmargin}{0pt}\setlength{\parsep}{0pt}\ifodd #1\setlength{\leftmargin}{\cslhangindent}\setlength{\itemindent}{-1\cslhangindent}\fi\setlength{\itemsep}{#2\baselineskip}}}{\end{list}} \
+              \NewDocumentCommand\citeproctext{}{} \
               \usepackage{graphicx}\
               \makeatletter\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}\makeatother\
               \setkeys{Gin}{width=\maxwidth,keepaspectratio}" \
