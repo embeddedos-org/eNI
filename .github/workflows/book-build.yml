@@ -52,10 +52,14 @@ jobs:
           fi
           echo "has_book=true" >> $GITHUB_OUTPUT
           LINES=$(wc -l < docs/book/book.md)
-          IMAGES=$(grep -c '!\[' docs/book/book.md || echo 0)
-          TABLES=$(grep -c '^|' docs/book/book.md || echo 0)
-          CODE=$(grep -c '```' docs/book/book.md || echo 0)
-          CHAPTERS=$(grep -c '^## ' docs/book/book.md || echo 0)
+          # NB: grep -c prints the count (0) AND exits 1 when nothing
+          # matches, so "|| echo 0" would append a second 0, making the
+          # value multi-line and breaking $GITHUB_OUTPUT ("Invalid
+          # format '0'"). "|| true" swallows the exit code only.
+          IMAGES=$(grep -c '!\[' docs/book/book.md || true)
+          TABLES=$(grep -c '^|' docs/book/book.md || true)
+          CODE=$(grep -c '```' docs/book/book.md || true)
+          CHAPTERS=$(grep -c '^## ' docs/book/book.md || true)
           echo "lines=$LINES" >> $GITHUB_OUTPUT
           echo "images=$IMAGES" >> $GITHUB_OUTPUT
           echo "tables=$TABLES" >> $GITHUB_OUTPUT
@@ -342,3 +346,4 @@ jobs:
           echo "- **Images:** ${{ needs.validate.outputs.images }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Tables:** ${{ needs.validate.outputs.tables }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+
