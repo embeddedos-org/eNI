@@ -117,10 +117,13 @@ jobs:
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
           echo "repo_name=$REPO_NAME" >> $GITHUB_OUTPUT
           echo "pdf_name=${REPO_NAME}-guide.pdf" >> $GITHUB_OUTPUT
-          # Extract title from frontmatter or first heading
-          TITLE=$(grep -m1 '^title:' docs/book/book.md | sed 's/^title: *"*//;s/"*$//' || echo "")
+          # Extract title from frontmatter or first heading. book.md is
+          # CRLF, so strip CR first: otherwise the closing quote is not
+          # the last character, the sed below cannot strip it, and the
+          # stray quote breaks the pandoc -V "title=..." argument.
+          TITLE=$(grep -m1 '^title:' docs/book/book.md | tr -d '\r' | sed 's/^title: *"*//;s/"*$//' || echo "")
           if [ -z "$TITLE" ]; then
-            TITLE=$(head -10 docs/book/book.md | grep "^# " | head -1 | sed 's/^# //')
+            TITLE=$(head -10 docs/book/book.md | grep "^# " | head -1 | tr -d '\r' | sed 's/^# //')
           fi
           if [ -z "$TITLE" ]; then TITLE="$REPO_NAME — Official Guide"; fi
           echo "title=$TITLE" >> $GITHUB_OUTPUT
