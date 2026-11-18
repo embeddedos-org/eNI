@@ -170,7 +170,7 @@ jobs:
             -V page-background-color="ffffff" \
             -V "title=${{ steps.meta.outputs.title }}" \
             -V "subtitle=Version ${{ steps.meta.outputs.version }}" \
-            -V "author=Srikanth Patchava & EmbeddedOS Contributors" \
+            -V "author=Srikanth Patchava \& EmbeddedOS Contributors" \
             -V "date=$(date +'%B %Y')" \
             -V toc=true \
             -V toc-depth=3 \
