@@ -194,11 +194,11 @@ jobs:
               \captionsetup{font=small,labelfont=bf,format=hang}\
               \captionsetup[figure]{name=Figure}\
               \captionsetup[table]{name=Table}\
-              % NB: no fancyhdr here. Eisvogel is KOMA-Script based and
-              % already loads scrlayer-scrpage, which defines \chead;
-              % loading fancyhdr dies with "Command \chead already
-              % defined". Eisvogel's own headers apply; custom headers
-              % would need KOMA setters (\chead etc.), not fancyhdr.
+              % NB: no fancyhdr here. Eisvogel is KOMA-Script based and \
+              % already loads scrlayer-scrpage, which defines chead; \
+              % loading fancyhdr dies with Command chead already defined. \
+              % Eisvogel's own headers apply; custom headers would need \
+              % KOMA setters (chead etc.), not fancyhdr.
               \usepackage{graphicx}\
               \makeatletter\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}\makeatother\
               \setkeys{Gin}{width=\maxwidth,keepaspectratio}" \
