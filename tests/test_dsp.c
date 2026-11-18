@@ -65,6 +65,35 @@ static void test_band_power(void) {
     PASS("band_power");
 }
 
+static void test_band_edges_counted_once(void) {
+    /* Flat PSD at 1 Hz resolution: one unit of power in every bin 0..127 Hz. */
+    eni_dsp_psd_result_t psd;
+    memset(&psd, 0, sizeof(psd));
+    psd.bin_count = 128;
+    psd.freq_resolution = 1.0f;
+    for (int i = 0; i < psd.bin_count; i++) psd.bins[i] = 1.0f;
+
+    /* Bands are half-open [low, high): a bin on a shared edge belongs to the upper band only. */
+    assert(eni_dsp_delta_power(&psd) == 3.0f);  /* 1, 2, 3 Hz */
+    assert(eni_dsp_theta_power(&psd) == 4.0f);  /* 4..7 Hz */
+    assert(eni_dsp_alpha_power(&psd) == 5.0f);  /* 8..12 Hz */
+    assert(eni_dsp_beta_power(&psd) == 17.0f);  /* 13..29 Hz */
+    assert(eni_dsp_gamma_power(&psd) == 70.0f); /* 30..99 Hz */
+
+    /* The five bands tile 0.5-100 Hz, so together they hold bins 1..99 exactly once. */
+    float sum = eni_dsp_delta_power(&psd) + eni_dsp_theta_power(&psd) +
+                eni_dsp_alpha_power(&psd) + eni_dsp_beta_power(&psd) +
+                eni_dsp_gamma_power(&psd);
+    assert(sum == 99.0f);
+
+    /* A single tone exactly on the 8 Hz theta/alpha edge is alpha, not theta as well. */
+    memset(psd.bins, 0, sizeof(psd.bins));
+    psd.bins[8] = 2.0f;
+    assert(eni_dsp_alpha_power(&psd) == 2.0f);
+    assert(eni_dsp_theta_power(&psd) == 0.0f);
+    PASS("band_edges_counted_once");
+}
+
 static void test_artifact_detection(void) {
     float signal[64];
     memset(signal, 0, sizeof(signal));
@@ -111,6 +140,7 @@ int main(void) {
     test_fft_known_sine();
     test_psd();
     test_band_power();
+    test_band_edges_counted_once();
     test_artifact_detection();
     test_epoch_buffer();
     test_feature_extraction();
