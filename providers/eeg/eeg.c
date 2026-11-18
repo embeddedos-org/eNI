@@ -13,6 +13,19 @@
 #include <string.h>
 #include <math.h>
 
+#define EEG_PI 3.14159265f
+
+/* One 2nd-order (biquad) section, RBJ cookbook, a0 normalised to 1. */
+typedef struct {
+    float b0, b1, b2;
+    float a1, a2;
+} eeg_biquad_t;
+
+typedef struct {
+    float x1, x2; /* previous inputs */
+    float y1, y2; /* previous outputs */
+} eeg_biquad_state_t;
+
 static struct {
     eni_eeg_config_t cfg;
     eni_eeg_state_t  state;
@@ -21,6 +34,14 @@ static struct {
     float            calibration_baseline[ENI_EEG_MAX_CHANNELS];
     int              calibrated;
     char             device_addr[ENI_EEG_MAX_DEVICE_ADDR];
+    /* Filter chain: high-pass at bandpass_low_hz, low-pass at
+     * bandpass_high_hz, notch at notch_freq_hz. Coefficients are fixed
+     * at init; each channel keeps its own section state. */
+    eeg_biquad_t       filt_hp, filt_lp, filt_notch;
+    int               filt_notch_enabled;
+    eeg_biquad_state_t filt_hp_state[ENI_EEG_MAX_CHANNELS];
+    eeg_biquad_state_t filt_lp_state[ENI_EEG_MAX_CHANNELS];
+    eeg_biquad_state_t filt_notch_state[ENI_EEG_MAX_CHANNELS];
 } g_eeg;
 
 /* Standard 10-20 electrode positions (21 electrodes) */
@@ -51,13 +72,96 @@ void eni_eeg_montage_standard_10_20(eni_eeg_montage_t *montage) {
     }
 }
 
-static float eeg_bandpass_filter(float sample, float low, float high, float fs) {
-    float dt = 1.0f / fs;
-    float rc_low = 1.0f / (2.0f * 3.14159f * low);
-    float rc_high = 1.0f / (2.0f * 3.14159f * high);
-    float alpha_high = dt / (rc_high + dt);
-    float alpha_low = rc_low / (rc_low + dt);
-    return sample * alpha_high * alpha_low;
+/* --- Stateful filter chain (RBJ cookbook biquads) ----------------------- */
+/*
+ * The previous implementation kept no state and returned
+ * sample * alpha_high * alpha_low — a constant gain, not a filter. The
+ * chain below is a real filter: each section carries its own per-channel
+ * delay line, so out-of-band tones are attenuated and the configured
+ * notch frequency is actually removed. common/dsp was checked first: it
+ * offers adaptive (LMS/NLMS/RLS) filters and artifact removal, but no
+ * plain IIR band-pass/notch building block, so the biquads live here.
+ * Q = 1/sqrt(2) (Butterworth) for the band edges; Q = 30 for the notch.
+ */
+
+static void eeg_biquad_lowpass(eeg_biquad_t *c, float fc, float fs) {
+    float w0 = 2.0f * EEG_PI * fc / fs;
+    float cosw = cosf(w0);
+    float alpha = sinf(w0) / (2.0f * 0.70710678f);
+    float a0 = 1.0f + alpha;
+    c->b0 = ((1.0f - cosw) / 2.0f) / a0;
+    c->b1 = (1.0f - cosw) / a0;
+    c->b2 = ((1.0f - cosw) / 2.0f) / a0;
+    c->a1 = (-2.0f * cosw) / a0;
+    c->a2 = (1.0f - alpha) / a0;
+}
+
+static void eeg_biquad_highpass(eeg_biquad_t *c, float fc, float fs) {
+    float w0 = 2.0f * EEG_PI * fc / fs;
+    float cosw = cosf(w0);
+    float alpha = sinf(w0) / (2.0f * 0.70710678f);
+    float a0 = 1.0f + alpha;
+    c->b0 = ((1.0f + cosw) / 2.0f) / a0;
+    c->b1 = -(1.0f + cosw) / a0;
+    c->b2 = ((1.0f + cosw) / 2.0f) / a0;
+    c->a1 = (-2.0f * cosw) / a0;
+    c->a2 = (1.0f - alpha) / a0;
+}
+
+static void eeg_biquad_notch(eeg_biquad_t *c, float f0, float fs) {
+    float w0 = 2.0f * EEG_PI * f0 / fs;
+    float cosw = cosf(w0);
+    float alpha = sinf(w0) / (2.0f * 30.0f); /* Q = 30: narrow mains notch */
+    float a0 = 1.0f + alpha;
+    c->b0 = 1.0f / a0;
+    c->b1 = (-2.0f * cosw) / a0;
+    c->b2 = 1.0f / a0;
+    c->a1 = (-2.0f * cosw) / a0;
+    c->a2 = (1.0f - alpha) / a0;
+}
+
+static float eeg_biquad_run(const eeg_biquad_t *c, eeg_biquad_state_t *s, float x) {
+    float y = c->b0 * x + c->b1 * s->x1 + c->b2 * s->x2
+            - c->a1 * s->y1 - c->a2 * s->y2;
+    s->x2 = s->x1;
+    s->x1 = x;
+    s->y2 = s->y1;
+    s->y1 = y;
+    return y;
+}
+
+static void eeg_filter_reset(void) {
+    memset(g_eeg.filt_hp_state, 0, sizeof(g_eeg.filt_hp_state));
+    memset(g_eeg.filt_lp_state, 0, sizeof(g_eeg.filt_lp_state));
+    memset(g_eeg.filt_notch_state, 0, sizeof(g_eeg.filt_notch_state));
+}
+
+static void eeg_filter_configure(void) {
+    float fs = (float)g_eeg.cfg.sample_rate;
+    float nyquist = fs / 2.0f;
+    eeg_biquad_highpass(&g_eeg.filt_hp, g_eeg.cfg.bandpass_low_hz, fs);
+    eeg_biquad_lowpass(&g_eeg.filt_lp, g_eeg.cfg.bandpass_high_hz, fs);
+    /* A notch at or above Nyquist cannot exist; disable it there. */
+    g_eeg.filt_notch_enabled =
+        (g_eeg.cfg.notch_freq_hz > 0.0f && g_eeg.cfg.notch_freq_hz < nyquist);
+    if (g_eeg.filt_notch_enabled)
+        eeg_biquad_notch(&g_eeg.filt_notch, g_eeg.cfg.notch_freq_hz, fs);
+    eeg_filter_reset();
+}
+
+float eni_eeg_filter_sample(int channel, float sample) {
+    if (!g_eeg.initialized || !g_eeg.cfg.filter_enabled)
+        return sample;
+    if (channel < 0 || channel >= (int)ENI_EEG_MAX_CHANNELS)
+        return sample;
+    float y = eeg_biquad_run(&g_eeg.filt_hp,
+                             &g_eeg.filt_hp_state[channel], sample);
+    y = eeg_biquad_run(&g_eeg.filt_lp,
+                       &g_eeg.filt_lp_state[channel], y);
+    if (g_eeg.filt_notch_enabled)
+        y = eeg_biquad_run(&g_eeg.filt_notch,
+                           &g_eeg.filt_notch_state[channel], y);
+    return y;
 }
 
 int eni_eeg_init(const eni_eeg_config_t *cfg) {
@@ -70,8 +174,14 @@ int eni_eeg_init(const eni_eeg_config_t *cfg) {
     if (g_eeg.cfg.sample_rate == 0) g_eeg.cfg.sample_rate = ENI_EEG_SAMPLE_RATE;
     if (g_eeg.cfg.bandpass_low_hz <= 0) g_eeg.cfg.bandpass_low_hz = 0.5f;
     if (g_eeg.cfg.bandpass_high_hz <= 0) g_eeg.cfg.bandpass_high_hz = 100.0f;
+    /* Keep the band well-formed and below Nyquist. */
+    if (g_eeg.cfg.bandpass_high_hz >= (float)g_eeg.cfg.sample_rate / 2.0f)
+        g_eeg.cfg.bandpass_high_hz = (float)g_eeg.cfg.sample_rate * 0.45f;
+    if (g_eeg.cfg.bandpass_low_hz >= g_eeg.cfg.bandpass_high_hz)
+        g_eeg.cfg.bandpass_low_hz = g_eeg.cfg.bandpass_high_hz / 2.0f;
     if (g_eeg.cfg.notch_freq_hz <= 0) g_eeg.cfg.notch_freq_hz = 60.0f;
     if (g_eeg.cfg.montage.count == 0) eni_eeg_montage_standard_10_20(&g_eeg.cfg.montage);
+    eeg_filter_configure();
     g_eeg.initialized = 1;
     return 0;
 }
@@ -102,7 +212,8 @@ int eni_eeg_connect(const char *device_addr) {
     g_eeg.state = ENI_EEG_STATE_CONNECTING;
     strncpy(g_eeg.device_addr, device_addr, sizeof(g_eeg.device_addr) - 1);
     g_eeg.device_addr[sizeof(g_eeg.device_addr) - 1] = '\0';
-    /* A new device means a new stream: fresh timestamps. */
+    /* A new device means a new stream: fresh filter state and timestamps. */
+    eeg_filter_reset();
     g_eeg.packet_idx = 0;
     g_eeg.state = ENI_EEG_STATE_STREAMING;
     ENI_LOG_INFO("eeg", "connected to simulated device %s", g_eeg.device_addr);
@@ -119,6 +230,7 @@ int eni_eeg_disconnect(void) {
     if (!g_eeg.initialized) return -1;
     g_eeg.state = ENI_EEG_STATE_DISCONNECTED;
     g_eeg.device_addr[0] = '\0';
+    eeg_filter_reset();
     return 0;
 }
 
@@ -165,14 +277,13 @@ int eni_eeg_read_packet(eni_eeg_packet_t *pkt) {
         raw += (noise_seed - 0.5f) * 10.0f;
 
         if (g_eeg.cfg.filter_enabled)
-            raw = eeg_bandpass_filter(raw, g_eeg.cfg.bandpass_low_hz,
-                                      g_eeg.cfg.bandpass_high_hz, fs);
+            raw = eni_eeg_filter_sample((int)ch, raw);
         if (g_eeg.calibrated)
             raw -= g_eeg.calibration_baseline[ch];
 
         pkt->channel_data[ch] = raw;
         /* Not measured: this provider has no electrodes. NAN, never an
-         * invented 5.0-9.5 kOhm value. */
+         * invented 5.0–9.5 kOhm value. */
         pkt->impedance[ch] = NAN;
     }
 
@@ -204,7 +315,7 @@ int eni_eeg_calibrate(uint32_t duration_ms) {
 int eni_eeg_check_impedance(float *impedance_out, int max_channels) {
     if (!g_eeg.initialized || !impedance_out || max_channels <= 0) return -1;
     /* No device behind this provider measures impedance. Report "not
-     * measured" (NaN) instead of the invented 5.0-9.5 kOhm values this
+     * measured" (NaN) instead of the invented 5.0–9.5 kOhm values this
      * used to return, including with nothing connected. */
     int count = (int)g_eeg.cfg.channels;
     if (count > max_channels) count = max_channels;

@@ -100,6 +100,13 @@ int  eni_eeg_calibrate(uint32_t duration_ms);
  * replace this with measured values instead of inventing them. */
 int  eni_eeg_check_impedance(float *impedance_out, int max_channels);
 
+/* Apply the configured filter chain (2nd-order high-pass at
+ * bandpass_low_hz, 2nd-order low-pass at bandpass_high_hz, notch at
+ * notch_freq_hz) to one sample on the given channel, keeping per-channel
+ * state. No-op passthrough when filter_enabled is 0 or the channel is out
+ * of range. Filter state is reset by eni_eeg_init() and eni_eeg_connect(). */
+float eni_eeg_filter_sample(int channel, float sample);
+
 /* Address passed to the last successful eni_eeg_connect(), or NULL when
  * disconnected. The returned string is owned by the provider. */
 const char *eni_eeg_get_device_addr(void);
