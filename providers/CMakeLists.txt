@@ -1,7 +1,7 @@
 option(ENI_PROVIDER_NEURALINK "Enable Neuralink BCI adapter" ON)
 option(ENI_PROVIDER_SIMULATOR "Enable BCI simulator (testing)" ON)
 option(ENI_PROVIDER_GENERIC   "Enable generic decoder" ON)
-option(ENI_PROVIDER_EEG       "Enable EEG non-invasive BCI adapter" ON)
+option(ENI_PROVIDER_EEG       "Enable simulated EEG non-invasive BCI provider (synthetic data; no hardware attached)" ON)
 option(ENI_PROVIDER_STIMULATOR_SIM "Enable simulated stimulator" ON)
 
 set(PROVIDER_SOURCES "")

@@ -24,7 +24,7 @@ eNI is part of the **EmbeddedOS**
 
 | Path | Contents |
 |------|----------|
-| `providers/` | Input providers: `eeg`, `lsl` (Lab Streaming Layer), `neuralink`, `simulator`, `wireless`, `stimulator_sim`, `generic`, `template` |
+| `providers/` | Input providers: `eeg` (simulated; synthetic data, no hardware), `lsl` (Lab Streaming Layer), `neuralink`, `simulator`, `wireless`, `stimulator_sim`, `generic`, `template` |
 | `common/` | Core signal path: `dsp`, `nn` (neural network), `feedback`, `tinyml`, `math`, `hal` |
 | `min/` | ENI-Min lightweight runtime |
 | `framework/` | ENI-Framework platform |

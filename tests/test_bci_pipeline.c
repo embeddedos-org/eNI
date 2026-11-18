@@ -19,7 +19,7 @@ static void test_eeg_to_dsp(void) {
     cfg.channels = 8;
     cfg.sample_rate = 256;
     assert(eni_eeg_init(&cfg) == 0);
-    assert(eni_eeg_connect("EEG-PIPELINE") == 0);
+    assert(eni_eeg_connect("sim:EEG-PIPELINE") == 0);
 
     /* Read packets and accumulate into DSP epoch */
     eni_dsp_fft_ctx_t fft_ctx;
@@ -111,7 +111,7 @@ static void test_full_pipeline(void) {
     eeg_cfg.channels = 8;
     eeg_cfg.sample_rate = 256;
     eni_eeg_init(&eeg_cfg);
-    eni_eeg_connect("EEG-FULL");
+    eni_eeg_connect("sim:EEG-FULL");
 
     /* 2. DSP → extract features */
     eni_dsp_fft_ctx_t fft_ctx;

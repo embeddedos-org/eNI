@@ -113,7 +113,7 @@ ctest --test-dir build -R eni_json_tests
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `ENI_PROVIDER_EEG` | OFF | Non-invasive EEG provider |
+| `ENI_PROVIDER_EEG` | OFF | Simulated EEG provider (synthetic data; no hardware attached) |
 | `ENI_PROVIDER_STIMULATOR_SIM` | OFF | Simulated stimulator |
 
 ## Cross-Compilation

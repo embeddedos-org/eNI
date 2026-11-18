@@ -14,7 +14,7 @@ eNI (Embedded Neural Interface) is a comprehensive, open-source framework for bu
 ## What does it do?
 
 ### Signal Acquisition
-Connect to any neural device — EEG headsets, invasive electrode arrays, or simulated sources. Multi-device synchronization out of the box.
+Connect to any neural device — invasive electrode arrays, EEG headsets, or simulated sources. (The bundled `eeg` provider is a simulated source: it synthesises EEG-like data and measures no impedance; a real headset adapter is separate work.) Multi-device synchronization out of the box.
 
 ### Signal Processing
 Real-time DSP with configurable filter chains (bandpass, notch, highpass, lowpass), artifact rejection (eye blinks, muscle, movement), and feature extraction (band power, spectral entropy, Hjorth parameters).

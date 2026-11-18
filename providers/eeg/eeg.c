@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 EoS Project
 // ISO/IEC 25000 | ISO/IEC/IEEE 15288:2023
+//
+// SIMULATED provider: the waveforms below are synthesised in software.
+// No hardware is attached; see eeg.h. eni_eeg_connect() accepts only
+// "sim:<name>" addresses and fails closed for anything else, and no
+// impedance value is ever invented (packets carry NaN, the impedance
+// check returns -1).
 
 #include "eeg.h"
 #include "eni/log.h"
@@ -14,6 +20,7 @@ static struct {
     uint64_t         packet_idx;
     float            calibration_baseline[ENI_EEG_MAX_CHANNELS];
     int              calibrated;
+    char             device_addr[ENI_EEG_MAX_DEVICE_ADDR];
 } g_eeg;
 
 /* Standard 10-20 electrode positions (21 electrodes) */
@@ -72,20 +79,46 @@ int eni_eeg_init(const eni_eeg_config_t *cfg) {
 void eni_eeg_deinit(void) {
     if (g_eeg.state == ENI_EEG_STATE_STREAMING) eni_eeg_disconnect();
     g_eeg.initialized = 0;
+    g_eeg.device_addr[0] = '\0';
 }
 
 int eni_eeg_connect(const char *device_addr) {
     if (!g_eeg.initialized) return -1;
     if (g_eeg.state != ENI_EEG_STATE_DISCONNECTED) return -1;
-    (void)device_addr;
+    /* Fail closed: only a named simulated device can be selected. There
+     * is no hardware transport behind this provider, so a bare name, a
+     * NULL/empty address, or any other scheme must not report success. */
+    if (!device_addr
+        || strncmp(device_addr, ENI_EEG_SIM_ADDR_PREFIX,
+                   ENI_EEG_SIM_ADDR_PREFIX_LEN) != 0
+        || device_addr[ENI_EEG_SIM_ADDR_PREFIX_LEN] == '\0') {
+        ENI_LOG_WARN("eeg", "connect rejected: address must be \"sim:<name>\"");
+        return -1;
+    }
+    if (strlen(device_addr) >= sizeof(g_eeg.device_addr)) {
+        ENI_LOG_WARN("eeg", "connect rejected: address too long");
+        return -1;
+    }
     g_eeg.state = ENI_EEG_STATE_CONNECTING;
+    strncpy(g_eeg.device_addr, device_addr, sizeof(g_eeg.device_addr) - 1);
+    g_eeg.device_addr[sizeof(g_eeg.device_addr) - 1] = '\0';
+    /* A new device means a new stream: fresh timestamps. */
+    g_eeg.packet_idx = 0;
     g_eeg.state = ENI_EEG_STATE_STREAMING;
+    ENI_LOG_INFO("eeg", "connected to simulated device %s", g_eeg.device_addr);
     return 0;
+}
+
+const char *eni_eeg_get_device_addr(void) {
+    if (!g_eeg.initialized || g_eeg.state == ENI_EEG_STATE_DISCONNECTED)
+        return NULL;
+    return g_eeg.device_addr;
 }
 
 int eni_eeg_disconnect(void) {
     if (!g_eeg.initialized) return -1;
     g_eeg.state = ENI_EEG_STATE_DISCONNECTED;
+    g_eeg.device_addr[0] = '\0';
     return 0;
 }
 
@@ -138,7 +171,9 @@ int eni_eeg_read_packet(eni_eeg_packet_t *pkt) {
             raw -= g_eeg.calibration_baseline[ch];
 
         pkt->channel_data[ch] = raw;
-        pkt->impedance[ch] = 5.0f + (float)(ch % 10) * 0.5f;
+        /* Not measured: this provider has no electrodes. NAN, never an
+         * invented 5.0-9.5 kOhm value. */
+        pkt->impedance[ch] = NAN;
     }
 
     g_eeg.packet_idx++;
@@ -167,17 +202,15 @@ int eni_eeg_calibrate(uint32_t duration_ms) {
 }
 
 int eni_eeg_check_impedance(float *impedance_out, int max_channels) {
-    if (!g_eeg.initialized || !impedance_out) return -1;
-    eni_eeg_state_t prev = g_eeg.state;
-    g_eeg.state = ENI_EEG_STATE_IMPEDANCE_CHECK;
-
+    if (!g_eeg.initialized || !impedance_out || max_channels <= 0) return -1;
+    /* No device behind this provider measures impedance. Report "not
+     * measured" (NaN) instead of the invented 5.0-9.5 kOhm values this
+     * used to return, including with nothing connected. */
     int count = (int)g_eeg.cfg.channels;
     if (count > max_channels) count = max_channels;
     for (int i = 0; i < count; i++)
-        impedance_out[i] = 5.0f + (float)(i % 10) * 0.5f;
-
-    g_eeg.state = prev;
-    return count;
+        impedance_out[i] = NAN;
+    return -1;
 }
 
 eni_eeg_state_t eni_eeg_get_state(void) {

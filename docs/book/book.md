@@ -580,7 +580,7 @@ eni_neuralink_ble_connect(&ble_cfg, &devices[0]);
 
 ## 6.1 Overview
 
-The EEG provider supports multi-channel EEG headsets with FFT-based band power analysis. It is designed for consumer-grade and research-grade EEG devices operating at lower channel counts and sample rates than the Neuralink provider.
+The EEG provider is a **simulated** source: it synthesises multi-channel EEG-like waveforms in software for pipeline development and testing, with FFT-based band power analysis. It is designed for consumer-grade and research-grade EEG devices operating at lower channel counts and sample rates than the Neuralink provider. No hardware is attached and no electrode impedance is measured; `eni_eeg_connect()` accepts only `sim:<name>` addresses and fails closed for anything else.
 
 ## 6.2 Capabilities
 
@@ -606,7 +606,7 @@ eni_eeg_config_t eeg_cfg = {
 };
 
 eni_eeg_init(&eeg_cfg);
-eni_eeg_connect("eeg-device-001");
+eni_eeg_connect("sim:eeg-device-001");
 eni_eeg_start();
 
 while (running) {
