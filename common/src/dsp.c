@@ -96,12 +96,15 @@ eni_status_t eni_dsp_psd(eni_dsp_fft_ctx_t *ctx, const float *signal, int n,
     return ENI_OK;
 }
 
+/* Sum the PSD bins in the half-open band [low_hz, high_hz). The standard bands
+ * below share their edges (4, 8, 13 and 30 Hz), so an inclusive upper edge
+ * would count a bin that falls exactly on one in two bands. */
 float eni_dsp_band_power(const eni_dsp_psd_result_t *psd, float low_hz, float high_hz) {
     if (!psd || psd->freq_resolution <= 0.0f) return 0.0f;
     float power = 0.0f;
     for (int i = 0; i < psd->bin_count; i++) {
         float freq = (float)i * psd->freq_resolution;
-        if (freq >= low_hz && freq <= high_hz)
+        if (freq >= low_hz && freq < high_hz)
             power += psd->bins[i];
     }
     return power;

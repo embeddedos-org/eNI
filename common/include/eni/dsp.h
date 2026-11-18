@@ -59,7 +59,7 @@ eni_status_t eni_dsp_fft(eni_dsp_fft_ctx_t *ctx, float *re, float *im, int n);
 eni_status_t eni_dsp_psd(eni_dsp_fft_ctx_t *ctx, const float *signal, int n,
                          float sample_rate, eni_dsp_psd_result_t *result);
 
-/* Band power */
+/* Band power: sum of the PSD bins in the half-open band [low_hz, high_hz) */
 float eni_dsp_band_power(const eni_dsp_psd_result_t *psd, float low_hz, float high_hz);
 float eni_dsp_delta_power(const eni_dsp_psd_result_t *psd);
 float eni_dsp_theta_power(const eni_dsp_psd_result_t *psd);
