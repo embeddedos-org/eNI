@@ -387,7 +387,7 @@ static int cmd_run_min(const cli_opts_t *opts)
         memset(&eeg_cfg, 0, sizeof(eeg_cfg));
         eeg_cfg.channels = 21;
         eeg_cfg.sample_rate = CLI_EEG_SAMPLE_RATE;
-        if (eni_eeg_init(&eeg_cfg) != 0 || eni_eeg_connect(NULL) != 0) {
+        if (eni_eeg_init(&eeg_cfg) != 0 || eni_eeg_connect("sim:EEG-001") != 0) {
             fprintf(stderr, "EEG init failed\n");
             return 1;
         }
