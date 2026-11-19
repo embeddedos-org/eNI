@@ -12,6 +12,11 @@
 #include "eni/edf.h"
 #include "eni/bdf.h"
 #include "eni/annotation.h"
+#include "eni/recorder.h"
+#ifndef _WIN32
+#include <signal.h>
+#include <unistd.h>
+#endif
 
 static int tests_run = 0, tests_passed = 0, tests_failed = 0;
 #define TEST(name) do { tests_run++; printf("  TEST %-40s ", #name); } while(0)
@@ -230,6 +235,80 @@ static void test_annotation_system(void)
     PASS();
 }
 
+#ifndef _WIN32
+static void recorder_stop_timeout(int sig)
+{
+    (void)sig;
+    static const char msg[] = "[FAIL] eni_recorder_stop() did not return within 5 s\n";
+    (void)!write(1, msg, sizeof(msg) - 1);
+    _exit(1);
+}
+#endif
+
+/* Stopping with fewer samples buffered than one record holds must finish:
+ * whole records are written, the incomplete tail is dropped. */
+static void test_recorder_stop_with_partial_record(void)
+{
+    TEST(recorder_stop_with_partial_record);
+    const char *path = "/tmp/eni_test_recorder.edf";
+    eni_data_header_t hdr;
+    eni_data_header_init(&hdr);
+    hdr.num_channels = 1;
+    hdr.record_duration = 1.0;
+    snprintf(hdr.channels[0].label, ENI_DATA_MAX_LABEL, "Ch0");
+    hdr.channels[0].physical_min = -100.0;
+    hdr.channels[0].physical_max = 100.0;
+    hdr.channels[0].digital_min = -32768;
+    hdr.channels[0].digital_max = 32767;
+    hdr.channels[0].samples_per_record = 4;
+    hdr.channels[0].sample_rate = 4.0;
+
+    static eni_recorder_t rec;
+    eni_status_t rc = eni_recorder_init(&rec, ENI_FORMAT_EDF, &hdr);
+    assert(rc == ENI_OK);
+    rc = eni_recorder_start(&rec, path);
+    assert(rc == ENI_OK);
+
+    double samples[10]; /* two whole records plus 2 samples */
+    for (int i = 0; i < 10; i++) samples[i] = (double)i;
+    rc = eni_recorder_push_samples(&rec, samples, 10);
+    assert(rc == ENI_OK);
+
+    fflush(stdout);
+#ifndef _WIN32
+    signal(SIGALRM, recorder_stop_timeout);
+    alarm(5);
+#endif
+    rc = eni_recorder_stop(&rec);
+#ifndef _WIN32
+    alarm(0);
+#endif
+    assert(rc == ENI_OK);
+    assert(rec.state == ENI_RECORDER_STOPPED);
+    if (rec.records_written != 2 || rec.samples_written != 8) {
+        char msg[96];
+        snprintf(msg, sizeof(msg), "records_written=%llu samples_written=%llu, expected 2 and 8",
+                 (unsigned long long)rec.records_written,
+                 (unsigned long long)rec.samples_written);
+        FAIL(msg);
+        eni_recorder_destroy(&rec);
+        return;
+    }
+    eni_recorder_destroy(&rec);
+
+    eni_edf_file_t edf;
+    rc = eni_edf_open(&edf, path);
+    assert(rc == ENI_OK);
+    assert(edf.header.num_records == 2);
+    double back[4];
+    rc = eni_edf_read_record(&edf, 1, back, 4);
+    assert(rc == ENI_OK);
+    assert(fabs(back[3] - 7.0) < 0.01);
+    eni_edf_close(&edf);
+    remove(path);
+    PASS();
+}
+
 int main(void)
 {
     printf("=== Data Format Tests ===\n");
@@ -240,6 +319,7 @@ int main(void)
     test_edf_header_full_width_fields();
     test_bdf_header_full_width_fields();
     test_annotation_system();
+    test_recorder_stop_with_partial_record();
     printf("\n%d/%d tests passed\n", tests_passed, tests_run);
     return tests_failed > 0 ? 1 : 0;
 }

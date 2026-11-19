@@ -11,27 +11,25 @@ static void *recorder_flush_thread(void *arg)
 {
     eni_recorder_t *rec = (eni_recorder_t *)arg;
 
+    /* How many samples make a complete record (the header does not change
+     * while recording). */
+    int samples_per_record = 0;
+    for (int ch = 0; ch < rec->header.num_channels; ch++)
+        samples_per_record += rec->header.channels[ch].samples_per_record;
+
     while (1) {
         eni_mutex_lock(&rec->lock);
-
-        while (rec->ring_count == 0 && !rec->stop_requested) {
-            eni_condvar_timedwait(&rec->data_ready, &rec->lock, 100);
-        }
-
-        if (rec->stop_requested && rec->ring_count == 0) {
-            eni_mutex_unlock(&rec->lock);
-            break;
-        }
-
-        /* Calculate how many samples make a complete record */
-        int samples_per_record = 0;
-        for (int ch = 0; ch < rec->header.num_channels; ch++)
-            samples_per_record += rec->header.channels[ch].samples_per_record;
 
         /* Guard against zero-length records (would infinite loop) */
         if (samples_per_record <= 0) {
             eni_mutex_unlock(&rec->lock);
             break;
+        }
+
+        /* Sleep until a whole record is buffered (or stop is requested);
+         * a partial record alone must not keep this loop running. */
+        while (rec->ring_count < samples_per_record && !rec->stop_requested) {
+            eni_condvar_timedwait(&rec->data_ready, &rec->lock, 100);
         }
 
         while (rec->ring_count >= samples_per_record) {
@@ -55,6 +53,20 @@ static void *recorder_flush_thread(void *arg)
 
             free(buf);
             eni_mutex_lock(&rec->lock);
+        }
+
+        /* On stop, every whole record has been written. What is left cannot
+         * fill a record (EDF stores whole records only), so drop it and
+         * finish instead of waiting for samples that will never come. */
+        if (rec->stop_requested && rec->ring_count < samples_per_record) {
+            if (rec->ring_count > 0) {
+                ENI_LOG_WARN("recorder", "dropping %d samples of an incomplete record",
+                             rec->ring_count);
+                rec->ring_head = rec->ring_tail;
+                rec->ring_count = 0;
+            }
+            eni_mutex_unlock(&rec->lock);
+            break;
         }
 
         eni_mutex_unlock(&rec->lock);
