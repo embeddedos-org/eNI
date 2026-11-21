@@ -90,8 +90,11 @@ eni_status_t eni_calibration_push_baseline_sample(eni_calibration_t *cal, const 
     eni_mutex_lock(&cal->lock);
     int n = (num_channels < cal->num_channels) ? num_channels : cal->num_channels;
     for (int ch = 0; ch < n; ch++) {
-        cal->baseline_sum[ch] += (double)samples[ch];
-        cal->baseline_sum_sq[ch] += (double)(samples[ch] * samples[ch]);
+        /* Square in double: a float square keeps only 24 bits, and the
+         * rounding error swamps the variance of a signal with a DC offset. */
+        double x = (double)samples[ch];
+        cal->baseline_sum[ch] += x;
+        cal->baseline_sum_sq[ch] += x * x;
     }
     cal->baseline_samples++;
 
