@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 #include "eni/session.h"
 #include "eni/profile.h"
 #include "eni/calibration.h"
@@ -81,6 +82,41 @@ static void test_profile_save_load(void)
     assert(loaded.num_classes == 4);
     assert(loaded.total_sessions == 1);
     assert(loaded.valid);
+    PASS();
+}
+
+/* The per-channel calibration written by eni_profile_save() must come back
+ * from eni_profile_load(); otherwise a reloaded profile has gain 0 on every
+ * channel. */
+static void test_profile_load_keeps_channel_calibration(void)
+{
+    TEST(profile_load_keeps_channel_calibration);
+    const char *path = "/tmp/eni_test_profile_cal.json";
+
+    eni_profile_t profile;
+    assert(eni_profile_init(&profile, "user-43") == ENI_OK);
+    assert(eni_profile_set_channel_cal(&profile, 0, 1.5f, -0.1f, 15.0f) == ENI_OK);
+    assert(eni_profile_set_channel_cal(&profile, 1, 1.25f, 0.05f, 20.5f) == ENI_OK);
+    assert(eni_profile_save(&profile, path) == ENI_OK);
+
+    eni_profile_t loaded;
+    assert(eni_profile_load(&loaded, path) == ENI_OK);
+    remove(path);
+
+    const float gain[2] = {1.5f, 1.25f}, offset[2] = {-0.1f, 0.05f}, imp[2] = {15.0f, 20.5f};
+    if (loaded.num_channels != 2) { FAIL("num_channels"); return; }
+    for (int ch = 0; ch < 2; ch++) {
+        if (fabsf(loaded.channel_gains[ch] - gain[ch]) > 1e-5f ||
+            fabsf(loaded.channel_offsets[ch] - offset[ch]) > 1e-5f ||
+            fabsf(loaded.impedance_baseline[ch] - imp[ch]) > 1e-2f) {
+            char msg[160];
+            snprintf(msg, sizeof(msg), "ch%d gain=%g offset=%g impedance=%g", ch,
+                     loaded.channel_gains[ch], loaded.channel_offsets[ch],
+                     loaded.impedance_baseline[ch]);
+            FAIL(msg);
+            return;
+        }
+    }
     PASS();
 }
 
@@ -186,6 +222,7 @@ int main(void)
     printf("=== Session & Calibration Tests ===\n");
     test_session_lifecycle();
     test_profile_save_load();
+    test_profile_load_keeps_channel_calibration();
     test_calibration_pipeline();
     test_calibration_baseline_with_offset();
     test_transfer_learning();

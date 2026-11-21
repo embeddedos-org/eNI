@@ -58,6 +58,19 @@ eni_status_t eni_profile_save(const eni_profile_t *profile, const char *path)
     return ENI_OK;
 }
 
+/* Copy up to max numbers from the JSON array root[key] into out. */
+static void load_float_array(const eni_json_value_t *root, const char *key,
+                             float *out, int max)
+{
+    const eni_json_value_t *arr = eni_json_get(root, key);
+    if (!arr || arr->type != ENI_JSON_ARRAY) return;
+    int n = arr->data.container.count < max ? arr->data.container.count : max;
+    for (int i = 0; i < n; i++) {
+        const eni_json_value_t *v = &arr->data.container.children[i];
+        if (v->type == ENI_JSON_NUMBER) out[i] = (float)v->data.number;
+    }
+}
+
 eni_status_t eni_profile_load(eni_profile_t *profile, const char *path)
 {
     if (!profile || !path) return ENI_ERR_INVALID;
@@ -95,6 +108,13 @@ eni_status_t eni_profile_load(eni_profile_t *profile, const char *path)
     strncpy(profile->device_id, s, sizeof(profile->device_id) - 1);
 
     profile->num_channels = (int)eni_json_get_number(&root, "num_channels", 0.0);
+
+    load_float_array(&root, "channel_gains", profile->channel_gains,
+                     ENI_PROFILE_MAX_CHANNELS);
+    load_float_array(&root, "channel_offsets", profile->channel_offsets,
+                     ENI_PROFILE_MAX_CHANNELS);
+    load_float_array(&root, "impedance_baseline", profile->impedance_baseline,
+                     ENI_PROFILE_MAX_CHANNELS);
 
     s = eni_json_get_string(&root, "decoder_model", "");
     strncpy(profile->decoder_model, s, sizeof(profile->decoder_model) - 1);
