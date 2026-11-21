@@ -124,6 +124,37 @@ static void test_calibration_pipeline(void)
     PASS();
 }
 
+static void test_calibration_baseline_with_offset(void)
+{
+    TEST(calibration_baseline_with_offset);
+    /* A channel with a 4096 uV DC offset and +/-0.5 uV of signal: the
+     * samples and their squares are all exact in double, so the baseline
+     * must come out as mean 4096, std 0.5. */
+    eni_calibration_t cal;
+    assert(eni_calibration_init(&cal, 1, 256.0f) == ENI_OK);
+    assert(eni_calibration_start_baseline(&cal) == ENI_OK);
+    for (int s = 0; s < 256; s++) {
+        float sample = (s % 2 == 0) ? 4096.5f : 4095.5f;
+        assert(eni_calibration_push_baseline_sample(&cal, &sample, 1) == ENI_OK);
+    }
+    assert(eni_calibration_finalize_baseline(&cal) == ENI_OK);
+
+    float mean = cal.baseline_mean[0];
+    float std = cal.baseline_std[0];
+    eni_calibration_destroy(&cal);
+    if (mean != 4096.0f) {
+        printf("(mean %.6f, expected 4096) ", (double)mean);
+        FAIL("baseline mean");
+        return;
+    }
+    if (std < 0.499f || std > 0.501f) {
+        printf("(std %.6f, expected 0.5) ", (double)std);
+        FAIL("baseline std");
+        return;
+    }
+    PASS();
+}
+
 static void test_transfer_learning(void)
 {
     TEST(transfer_learning);
@@ -156,6 +187,7 @@ int main(void)
     test_session_lifecycle();
     test_profile_save_load();
     test_calibration_pipeline();
+    test_calibration_baseline_with_offset();
     test_transfer_learning();
     printf("\n%d/%d tests passed\n", tests_passed, tests_run);
     return tests_failed > 0 ? 1 : 0;
