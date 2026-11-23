@@ -322,6 +322,14 @@ eni_status_t eni_edf_write_record(eni_edf_file_t *edf, const double *samples,
 {
     if (!edf || !edf->fp || !edf->writing || !samples) return ENI_ERR_INVALID;
 
+    /* A record holds samples_per_record samples of every channel. Writing
+     * fewer would make it shorter than the header says, and every later
+     * record would be read from the wrong offset. */
+    int64_t record_samples = 0;
+    for (int ch = 0; ch < edf->header.num_channels; ch++)
+        record_samples += edf->header.channels[ch].samples_per_record;
+    if (num_samples < record_samples) return ENI_ERR_INVALID;
+
     int sample_idx = 0;
     for (int ch = 0; ch < edf->header.num_channels; ch++) {
         int spr = edf->header.channels[ch].samples_per_record;

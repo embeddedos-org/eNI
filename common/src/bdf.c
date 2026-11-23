@@ -202,6 +202,14 @@ eni_status_t eni_bdf_write_record(eni_bdf_file_t *bdf, const double *samples, in
 {
     if (!bdf || !bdf->fp || !bdf->writing || !samples) return ENI_ERR_INVALID;
 
+    /* A record holds samples_per_record samples of every channel. Writing
+     * fewer would make it shorter than the header says, and every later
+     * record would be read from the wrong offset. */
+    int64_t record_samples = 0;
+    for (int ch = 0; ch < bdf->header.num_channels; ch++)
+        record_samples += bdf->header.channels[ch].samples_per_record;
+    if (num_samples < record_samples) return ENI_ERR_INVALID;
+
     int sample_idx = 0;
     for (int ch = 0; ch < bdf->header.num_channels; ch++) {
         int spr = bdf->header.channels[ch].samples_per_record;

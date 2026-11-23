@@ -309,6 +309,80 @@ static void test_recorder_stop_with_partial_record(void)
     PASS();
 }
 
+/* Two channels of 2 samples per record: a record is 4 samples. A call with
+ * fewer must be refused, not written as a short record that shifts every
+ * record after it. */
+static void short_record_header(eni_data_header_t *hdr)
+{
+    eni_data_header_init(hdr);
+    hdr->num_channels = 2;
+    hdr->record_duration = 1.0;
+    for (int i = 0; i < 2; i++) {
+        snprintf(hdr->channels[i].label, ENI_DATA_MAX_LABEL, "Ch%d", i);
+        hdr->channels[i].physical_min = -100.0;
+        hdr->channels[i].physical_max = 100.0;
+        hdr->channels[i].samples_per_record = 2;
+        hdr->channels[i].sample_rate = 2.0;
+    }
+}
+
+static void test_edf_bdf_write_short_record_refused(void)
+{
+    TEST(edf_bdf_write_short_record_refused);
+    const double rec0[4] = {1.0, 2.0, 3.0, 4.0};
+    const double rec1[4] = {5.0, 6.0, 7.0, 8.0};
+    const double short_rec[3] = {9.0, 9.0, 9.0};
+    char msg[320] = "";
+
+    const char *edf_path = "/tmp/eni_test_short_record.edf";
+    eni_data_header_t hdr;
+    short_record_header(&hdr);
+    for (int i = 0; i < 2; i++) { hdr.channels[i].digital_min = -32768; hdr.channels[i].digital_max = 32767; }
+    eni_edf_file_t edf;
+    assert(eni_edf_create(&edf, edf_path, &hdr) == ENI_OK);
+    assert(eni_edf_write_record(&edf, rec0, 4) == ENI_OK);
+    eni_status_t edf_short = eni_edf_write_record(&edf, short_rec, 3);
+    assert(eni_edf_write_record(&edf, rec1, 4) == ENI_OK);
+    assert(eni_edf_finalize(&edf) == ENI_OK);
+    eni_edf_file_t erd;
+    assert(eni_edf_open(&erd, edf_path) == ENI_OK);
+    double eback[4] = {0};
+    int64_t edf_records = erd.header.num_records;
+    eni_status_t edf_read = eni_edf_read_record(&erd, 1, eback, 4);
+    eni_edf_close(&erd);
+    remove(edf_path);
+    if (edf_short != ENI_ERR_INVALID || edf_records != 2 || edf_read != ENI_OK ||
+        fabs(eback[0] - 5.0) > 0.01 || fabs(eback[3] - 8.0) > 0.01)
+        snprintf(msg, sizeof(msg), "EDF: short write rc=%d, %lld records, record 1 = %g..%g (want rc=%d, 2, 5..8)",
+                 (int)edf_short, (long long)edf_records, eback[0], eback[3], (int)ENI_ERR_INVALID);
+
+    const char *bdf_path = "/tmp/eni_test_short_record.bdf";
+    short_record_header(&hdr);
+    for (int i = 0; i < 2; i++) { hdr.channels[i].digital_min = -8388608; hdr.channels[i].digital_max = 8388607; }
+    eni_bdf_file_t bdf;
+    assert(eni_bdf_create(&bdf, bdf_path, &hdr) == ENI_OK);
+    assert(eni_bdf_write_record(&bdf, rec0, 4) == ENI_OK);
+    eni_status_t bdf_short = eni_bdf_write_record(&bdf, short_rec, 3);
+    assert(eni_bdf_write_record(&bdf, rec1, 4) == ENI_OK);
+    assert(eni_bdf_finalize(&bdf) == ENI_OK);
+    eni_bdf_file_t brd;
+    assert(eni_bdf_open(&brd, bdf_path) == ENI_OK);
+    double bback[4] = {0};
+    int64_t bdf_records = brd.header.num_records;
+    eni_status_t bdf_read = eni_bdf_read_record(&brd, 1, bback, 4);
+    eni_bdf_close(&brd);
+    remove(bdf_path);
+    if (bdf_short != ENI_ERR_INVALID || bdf_records != 2 || bdf_read != ENI_OK ||
+        fabs(bback[0] - 5.0) > 0.01 || fabs(bback[3] - 8.0) > 0.01) {
+        size_t used = strlen(msg);
+        snprintf(msg + used, sizeof(msg) - used, "%sBDF: short write rc=%d, %lld records, record 1 = %g..%g",
+                 used ? "; " : "", (int)bdf_short, (long long)bdf_records, bback[0], bback[3]);
+    }
+
+    if (msg[0]) FAIL(msg);
+    else PASS();
+}
+
 int main(void)
 {
     printf("=== Data Format Tests ===\n");
@@ -320,6 +394,7 @@ int main(void)
     test_bdf_header_full_width_fields();
     test_annotation_system();
     test_recorder_stop_with_partial_record();
+    test_edf_bdf_write_short_record_refused();
     printf("\n%d/%d tests passed\n", tests_passed, tests_run);
     return tests_failed > 0 ? 1 : 0;
 }
