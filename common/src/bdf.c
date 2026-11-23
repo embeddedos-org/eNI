@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <limits.h>
 
 /* Read a fixed-width header field of len bytes (at most 80) into buf, which
  * holds cap bytes, keeping every character that fits and trimming spaces. */
@@ -109,15 +110,30 @@ eni_status_t eni_bdf_open(eni_bdf_file_t *bdf, const char *path)
     for (int i = 0; i < ns; i++) {
         bdf_read_fixed(bdf->fp, buf, sizeof(buf), 8);
         bdf->header.channels[i].samples_per_record = atoi(buf);
+        /* Same attacker-controlled field as the EDF reader: reject a
+         * non-positive or unbounded count before it reaches the multiply. */
+        if (bdf->header.channels[i].samples_per_record <= 0) {
+            fclose(bdf->fp);
+            bdf->fp = NULL;
+            return ENI_ERR_CONFIG;
+        }
         if (bdf->header.record_duration > 0.0)
             bdf->header.channels[i].sample_rate =
                 bdf->header.channels[i].samples_per_record / bdf->header.record_duration;
     }
     for (int i = 0; i < ns; i++) bdf_read_fixed(bdf->fp, buf, sizeof(buf), 32);
 
-    bdf->record_size = 0;
+    /* Accumulate in int64_t; see the matching comment in edf.c. */
+    int64_t record_size = 0;
     for (int i = 0; i < ns; i++)
-        bdf->record_size += bdf->header.channels[i].samples_per_record * 3; /* 24-bit */
+        record_size += (int64_t)bdf->header.channels[i].samples_per_record * 3; /* 24-bit */
+
+    if (record_size > INT_MAX) {
+        fclose(bdf->fp);
+        bdf->fp = NULL;
+        return ENI_ERR_CONFIG;
+    }
+    bdf->record_size = (int)record_size;
 
     bdf->data_offset = header_bytes;
     return ENI_OK;
