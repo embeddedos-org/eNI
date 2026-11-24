@@ -305,6 +305,14 @@ if(ENI_BUILD_DATA_FORMATS)
     target_link_libraries(eni_test_player PRIVATE eni_common eni_platform)
     add_test(NAME eni_player_tests COMMAND eni_test_player)
     set_tests_properties(eni_player_tests PROPERTIES LABELS "unit")
+
+    add_executable(eni_test_format_open_handles test_format_open_handles.c)
+    target_link_libraries(eni_test_format_open_handles PRIVATE eni_common eni_platform)
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(eni_test_format_open_handles PRIVATE m)
+    endif()
+    add_test(NAME eni_format_open_handle_tests COMMAND eni_test_format_open_handles)
+    set_tests_properties(eni_format_open_handle_tests PROPERTIES LABELS "unit")
 endif()
 
 # Session, calibration, profile tests

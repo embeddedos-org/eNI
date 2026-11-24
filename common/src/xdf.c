@@ -55,7 +55,11 @@ eni_status_t eni_xdf_open(eni_xdf_file_t *xdf, const char *path)
     /* Verify magic: "XDF:" */
     char magic[4];
     if (fread(magic, 1, 4, xdf->fp) != 4 || memcmp(magic, "XDF:", 4) != 0) {
+        /* Clear the handle as well as closing it: eni_xdf_close() frees any
+         * non-NULL fp, so a caller that closes defensively after a failed open
+         * would otherwise fclose() the same FILE* twice. */
         fclose(xdf->fp);
+        xdf->fp = NULL;
         return ENI_ERR_CONFIG;
     }
 
