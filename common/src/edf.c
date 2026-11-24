@@ -99,7 +99,11 @@ eni_status_t eni_edf_open(eni_edf_file_t *edf, const char *path)
     edf->header.num_channels = atoi(buf);
 
     if (edf->header.num_channels <= 0 || edf->header.num_channels > ENI_DATA_MAX_CHANNELS) {
+        /* Clear the handle as well as closing it: eni_edf_close() frees any
+         * non-NULL fp, so a caller that closes defensively after a failed
+         * open would otherwise fclose() the same FILE* twice. */
         fclose(edf->fp);
+        edf->fp = NULL;
         return ENI_ERR_CONFIG;
     }
 

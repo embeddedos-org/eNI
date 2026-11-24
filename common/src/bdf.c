@@ -93,7 +93,12 @@ eni_status_t eni_bdf_open(eni_bdf_file_t *bdf, const char *path)
     bdf->header.num_channels = atoi(buf);
 
     if (bdf->header.num_channels <= 0 || bdf->header.num_channels > ENI_DATA_MAX_CHANNELS) {
-        fclose(bdf->fp); return ENI_ERR_CONFIG;
+        /* Clear the handle as well as closing it: eni_bdf_close() frees any
+         * non-NULL fp, so a caller that closes defensively after a failed
+         * open would otherwise fclose() the same FILE* twice. */
+        fclose(bdf->fp);
+        bdf->fp = NULL;
+        return ENI_ERR_CONFIG;
     }
 
     int ns = bdf->header.num_channels;
