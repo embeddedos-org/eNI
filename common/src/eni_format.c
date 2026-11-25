@@ -31,6 +31,17 @@ eni_status_t eni_native_open(eni_native_file_t *nf, const char *path)
     fread(&num_channels, 4, 1, nf->fp);
     fread(&sample_rate, 4, 1, nf->fp);
 
+    /* num_channels is read straight out of the file. The channel-info loop
+     * below writes 80 bytes into nf->header.channels[ch] for every count it
+     * is given, and that array holds ENI_DATA_MAX_CHANNELS entries, so a file
+     * declaring more would write past the end of eni_data_header_t. Bound it
+     * here, the way the EDF and BDF readers bound their own channel counts. */
+    if (num_channels > (uint32_t)ENI_DATA_MAX_CHANNELS) {
+        fclose(nf->fp);
+        nf->fp = NULL;
+        return ENI_ERR_CONFIG;
+    }
+
     nf->header.num_channels = (int)num_channels;
     /* Skip reserved */
     fseek(nf->fp, 16, SEEK_CUR);
