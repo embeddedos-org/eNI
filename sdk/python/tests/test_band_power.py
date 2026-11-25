@@ -4,9 +4,9 @@
 band, using the half-open rule `low <= bin_centre_freq < high` — the same
 rule `eni_dsp_band_power()` uses in C (`common/src/dsp.c`).
 
-The SDK lives in `sdk/python/eni`, which collides by name with the root
-`eni` package, so load the module straight from its file instead of
-importing `eni.core`.
+This file lives beside the SDK, but `sdk/python/eni` still collides by name
+with the root `eni` package, so load the module straight from its file
+rather than importing `eni.core`.
 """
 import importlib.util
 import os
@@ -15,8 +15,7 @@ import unittest
 import numpy as np
 
 _SDK_CORE = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    "sdk", "python", "eni", "core.py",
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "eni", "core.py",
 )
 
 
