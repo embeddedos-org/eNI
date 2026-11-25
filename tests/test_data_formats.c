@@ -13,6 +13,7 @@
 #include "eni/bdf.h"
 #include "eni/annotation.h"
 #include "eni/recorder.h"
+#include "eni/eni_format.h"
 #ifndef _WIN32
 #include <signal.h>
 #include <unistd.h>
@@ -51,6 +52,56 @@ static void test_format_names(void)
     assert(strcmp(eni_data_format_name(ENI_FORMAT_XDF), "XDF") == 0);
     assert(strcmp(eni_data_format_name(ENI_FORMAT_ENI), "ENI") == 0);
     PASS();
+}
+
+/* Reading a native file in calls smaller than a data chunk must return every
+ * sample once, in order: the part of a chunk that did not fit in the buffer is
+ * read by the next call, not skipped. */
+static void test_native_read_samples_across_calls(void)
+{
+    TEST(native_read_samples_across_calls);
+    const char *path = "/tmp/eni_test_native_read.eni";
+    eni_data_header_t hdr;
+    memset(&hdr, 0, sizeof(hdr));
+    hdr.num_channels = 1;
+    strcpy(hdr.channels[0].label, "C3");
+    hdr.channels[0].sample_rate = 256.0;
+
+    double chunk0[10], chunk1[3];
+    for (int i = 0; i < 10; i++) chunk0[i] = (double)(i + 1);
+    for (int i = 0; i < 3; i++) chunk1[i] = (double)(i + 11);
+
+    eni_native_file_t wr;
+    assert(eni_native_create(&wr, path, &hdr, 0) == ENI_OK);
+    assert(eni_native_write_samples(&wr, chunk0, 10) == ENI_OK);
+    assert(eni_native_write_event(&wr, 0.5, "marker") == ENI_OK);
+    assert(eni_native_write_samples(&wr, chunk1, 3) == ENI_OK);
+    assert(eni_native_finalize(&wr) == ENI_OK);
+
+    eni_native_file_t rd;
+    assert(eni_native_open(&rd, path) == ENI_OK);
+    double got[16] = {0};
+    int total = 0, calls = 0, n = 0;
+    do {
+        double buf[4];
+        assert(eni_native_read_samples(&rd, buf, 4, &n) == ENI_OK);
+        for (int i = 0; i < n && total < 16; i++) got[total++] = buf[i];
+        calls++;
+    } while (n > 0 && calls < 20);
+    eni_native_close(&rd);
+    remove(path);
+
+    bool ok = (total == 13);
+    for (int i = 0; ok && i < 13; i++)
+        if (fabs(got[i] - (double)(i + 1)) > 1e-6) ok = false;
+    if (ok) {
+        PASS();
+    } else {
+        char msg[160];
+        snprintf(msg, sizeof(msg), "read %d of 13 samples in 4-sample calls: %g %g %g %g %g ...",
+                 total, got[0], got[1], got[2], got[3], got[4]);
+        FAIL(msg);
+    }
 }
 
 static void test_edf_digital_physical_conversion(void)
@@ -388,6 +439,7 @@ int main(void)
     printf("=== Data Format Tests ===\n");
     test_format_detect();
     test_format_names();
+    test_native_read_samples_across_calls();
     test_edf_digital_physical_conversion();
     test_edf_write_read_roundtrip();
     test_edf_header_full_width_fields();
