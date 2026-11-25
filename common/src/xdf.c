@@ -139,6 +139,25 @@ eni_status_t eni_xdf_open(eni_xdf_file_t *xdf, const char *path)
             }
             break;
         }
+        case ENI_XDF_CHUNK_SAMPLES: {
+            /* Count the stream's values (double64, as eni_xdf_read_samples()
+             * reads them) so sample_count can be set below. */
+            if (content_len < 4) {
+                fseek(xdf->fp, content_len, SEEK_CUR);
+                break;
+            }
+            uint32_t stream_id;
+            if (fread(&stream_id, 1, 4, xdf->fp) != 4) goto done;
+            content_len -= 4;
+            for (int i = 0; i < xdf->stream_count; i++) {
+                if (xdf->streams[i].stream_id == (int)stream_id) {
+                    xdf->streams[i].sample_count += content_len / 8;
+                    break;
+                }
+            }
+            fseek(xdf->fp, content_len, SEEK_CUR);
+            break;
+        }
         default:
             fseek(xdf->fp, content_len, SEEK_CUR);
             break;
@@ -146,6 +165,13 @@ eni_status_t eni_xdf_open(eni_xdf_file_t *xdf, const char *path)
     }
 
 done:
+    /* sample_count is per channel (values are interleaved across channels);
+     * round up so sample_count * channel_count still covers every value. */
+    for (int i = 0; i < xdf->stream_count; i++) {
+        eni_xdf_stream_t *s = &xdf->streams[i];
+        if (s->channel_count > 1)
+            s->sample_count = (s->sample_count + s->channel_count - 1) / s->channel_count;
+    }
     ENI_LOG_INFO("xdf", "opened %s: %d streams", path, xdf->stream_count);
     return ENI_OK;
 }

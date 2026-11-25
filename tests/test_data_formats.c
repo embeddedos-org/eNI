@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include "eni/data_format.h"
 #include "eni/edf.h"
+#include "eni/xdf.h"
 #include "eni/bdf.h"
 #include "eni/annotation.h"
 #include "eni/recorder.h"
@@ -235,6 +236,67 @@ static void test_annotation_system(void)
     PASS();
 }
 
+/* eni_xdf_open() must report how many samples each stream holds, so a reader
+ * can size its buffer as sample_count * channel_count (read_xdf() in the
+ * Python binding does exactly that). */
+static void test_xdf_open_sets_sample_count(void)
+{
+    TEST(xdf_open_sets_sample_count);
+    const char *path = "/tmp/eni_test_sample_count.xdf";
+    eni_xdf_stream_t eeg, mrk;
+    memset(&eeg, 0, sizeof(eeg));
+    memset(&mrk, 0, sizeof(mrk));
+    eeg.stream_id = 1; strcpy(eeg.name, "EEG"); strcpy(eeg.type, "EEG");
+    eeg.channel_count = 2; eeg.nominal_srate = 256.0;
+    mrk.stream_id = 2; strcpy(mrk.name, "Markers"); strcpy(mrk.type, "Markers");
+    mrk.channel_count = 1; mrk.nominal_srate = 0.0;
+
+    const double eeg_a[6] = {1, 2, 3, 4, 5, 6};
+    const double eeg_b[4] = {7, 8, 9, 10};
+    const double mrk_a[3] = {100, 200, 300};
+
+    eni_xdf_file_t wr;
+    assert(eni_xdf_create(&wr, path) == ENI_OK);
+    assert(eni_xdf_add_stream(&wr, &eeg) == ENI_OK);
+    assert(eni_xdf_add_stream(&wr, &mrk) == ENI_OK);
+    assert(eni_xdf_write_samples(&wr, 1, eeg_a, 6) == ENI_OK);
+    assert(eni_xdf_write_samples(&wr, 2, mrk_a, 3) == ENI_OK);
+    assert(eni_xdf_write_clock_offset(&wr, 1, 0.25) == ENI_OK);
+    assert(eni_xdf_write_samples(&wr, 1, eeg_b, 4) == ENI_OK);
+    assert(eni_xdf_finalize(&wr) == ENI_OK);
+
+    eni_xdf_file_t rd;
+    assert(eni_xdf_open(&rd, path) == ENI_OK);
+    int64_t eeg_count = -1, mrk_count = -1;
+    int eeg_channels = 0;
+    for (int i = 0; i < rd.stream_count; i++) {
+        if (rd.streams[i].stream_id == 1) {
+            eeg_count = rd.streams[i].sample_count;
+            eeg_channels = rd.streams[i].channel_count;
+        }
+        if (rd.streams[i].stream_id == 2) mrk_count = rd.streams[i].sample_count;
+    }
+    /* A buffer sized from sample_count must hold every value of the stream. */
+    double buf[16] = {0};
+    int n = 0;
+    int cap = (int)(eeg_count * eeg_channels);
+    if (cap < 1) cap = 1;
+    if (cap > 16) cap = 16;
+    eni_status_t rs = eni_xdf_read_samples(&rd, 1, buf, cap, &n);
+    eni_xdf_close(&rd);
+    remove(path);
+
+    if (eeg_count == 5 && mrk_count == 3 && rs == ENI_OK && n == 10 &&
+        fabs(buf[0] - 1.0) < 1e-9 && fabs(buf[9] - 10.0) < 1e-9) {
+        PASS();
+    } else {
+        char msg[160];
+        snprintf(msg, sizeof(msg), "sample_count EEG=%lld Markers=%lld (want 5, 3); read %d of 10 EEG values",
+                 (long long)eeg_count, (long long)mrk_count, n);
+        FAIL(msg);
+    }
+}
+
 #ifndef _WIN32
 static void recorder_stop_timeout(int sig)
 {
@@ -393,6 +455,7 @@ int main(void)
     test_edf_header_full_width_fields();
     test_bdf_header_full_width_fields();
     test_annotation_system();
+    test_xdf_open_sets_sample_count();
     test_recorder_stop_with_partial_record();
     test_edf_bdf_write_short_record_refused();
     printf("\n%d/%d tests passed\n", tests_passed, tests_run);
