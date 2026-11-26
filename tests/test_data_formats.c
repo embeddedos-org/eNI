@@ -184,6 +184,72 @@ static void test_edf_header_full_width_fields(void)
     if (ok) PASS();
 }
 
+/* An EDF+ record's annotation signal starts with a time-keeping TAL
+ * ("+0" 0x14 0x14 0x00); the record's annotations follow it, and one TAL
+ * may carry several annotations that share its onset. */
+static void test_edf_read_annotations_after_timekeeping_tal(void)
+{
+    TEST(edf_read_annotations_after_timekeeping_tal);
+    const char *path = "/tmp/eni_test_annotations.edf";
+    eni_data_header_t hdr;
+    eni_data_header_init(&hdr);
+    hdr.num_channels = 2;
+    hdr.record_duration = 1.0;
+    for (int i = 0; i < 2; i++) {
+        hdr.channels[i].physical_min = -3200.0;
+        hdr.channels[i].physical_max = 3200.0;
+        hdr.channels[i].digital_min = -32768;
+        hdr.channels[i].digital_max = 32767;
+        hdr.channels[i].sample_rate = 4.0;
+    }
+    strncpy(hdr.channels[0].label, "EEG Fz", ENI_DATA_MAX_LABEL - 1);
+    hdr.channels[0].samples_per_record = 4;
+    strncpy(hdr.channels[1].label, "EDF Annotations", ENI_DATA_MAX_LABEL - 1);
+    hdr.channels[1].samples_per_record = 32; /* 64 bytes of TALs */
+
+    eni_edf_file_t edf;
+    assert(eni_edf_create(&edf, path, &hdr) == ENI_OK);
+    int64_t data_offset = edf.data_offset;
+    double zeros[36] = {0};
+    assert(eni_edf_write_record(&edf, zeros, 36) == ENI_OK);
+    assert(eni_edf_finalize(&edf) == ENI_OK);
+
+    /* Put TALs in the record's annotation signal (after 4 EEG samples). */
+    static const char tals[] =
+        "+0" "\x14" "\x14" "\0"
+        "+1.5" "\x15" "2" "\x14" "Stim on" "\x14" "\0"
+        "+3" "\x14" "Eyes closed" "\x14" "Blink" "\x14" "\0";
+    char annot[64] = {0};
+    memcpy(annot, tals, sizeof(tals) - 1);
+    FILE *fp = fopen(path, "r+b");
+    assert(fp);
+    assert(fseek(fp, (long)(data_offset + 4 * 2), SEEK_SET) == 0);
+    assert(fwrite(annot, 1, sizeof(annot), fp) == sizeof(annot));
+    fclose(fp);
+
+    eni_edf_file_t rd;
+    assert(eni_edf_open(&rd, path) == ENI_OK);
+    assert(eni_edf_read_annotations(&rd) == ENI_OK);
+    bool ok = rd.annotation_count == 3 &&
+              rd.annotations[0].onset == 1.5 && rd.annotations[0].duration == 2.0 &&
+              strcmp(rd.annotations[0].text, "Stim on") == 0 &&
+              rd.annotations[1].onset == 3.0 && rd.annotations[1].duration == 0.0 &&
+              strcmp(rd.annotations[1].text, "Eyes closed") == 0 &&
+              rd.annotations[2].onset == 3.0 &&
+              strcmp(rd.annotations[2].text, "Blink") == 0;
+    if (!ok) {
+        char msg[200];
+        snprintf(msg, sizeof(msg), "read %d annotation(s), want 3 (first: onset=%g text='%s')",
+                 rd.annotation_count,
+                 rd.annotation_count > 0 ? rd.annotations[0].onset : 0.0,
+                 rd.annotation_count > 0 ? rd.annotations[0].text : "");
+        FAIL(msg);
+    }
+    eni_edf_close(&rd);
+    remove(path);
+    if (ok) PASS();
+}
+
 static void test_bdf_header_full_width_fields(void)
 {
     TEST(bdf_header_full_width_fields);
@@ -529,6 +595,7 @@ int main(void)
     test_edf_digital_physical_conversion();
     test_edf_write_read_roundtrip();
     test_edf_header_full_width_fields();
+    test_edf_read_annotations_after_timekeeping_tal();
     test_bdf_header_full_width_fields();
     test_annotation_system();
     test_recorder_stop_with_partial_record();

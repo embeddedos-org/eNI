@@ -210,43 +210,49 @@ eni_status_t eni_edf_read_annotations(eni_edf_file_t *edf)
         size_t nread = fread(buf, 1, (size_t)annot_bytes, edf->fp);
         buf[nread] = '\0';
 
-        /* Simple TAL parse */
+        /* Parse every TAL in the signal. A TAL is
+         *   +onset [0x15 duration] 0x14 [annotation 0x14]... 0x00
+         * and the first one in each record is the time-keeping TAL, which
+         * has no annotation. Bytes after the last TAL are 0x00 padding. */
         int pos = 0;
         while (pos < (int)nread && edf->annotation_count < ENI_EDF_MAX_ANNOTATIONS) {
             if (buf[pos] != '+' && buf[pos] != '-') { pos++; continue; }
 
-            eni_edf_annotation_t *a = &edf->annotations[edf->annotation_count];
-            a->onset = strtod(&buf[pos], NULL);
+            double onset = strtod(&buf[pos], NULL);
+            double duration = 0.0;
 
-            /* Find duration separator (0x15) */
-            int dur_start = pos;
-            while (dur_start < (int)nread && buf[dur_start] != '\x15' && buf[dur_start] != '\x14')
-                dur_start++;
-
-            a->duration = 0.0;
-            if (dur_start < (int)nread && buf[dur_start] == '\x15') {
-                a->duration = strtod(&buf[dur_start + 1], NULL);
-                dur_start++;
-                while (dur_start < (int)nread && buf[dur_start] != '\x14') dur_start++;
+            /* Find the duration separator (0x15) or the end of the onset (0x14) */
+            int p = pos;
+            while (p < (int)nread && buf[p] != '\x15' && buf[p] != '\x14')
+                p++;
+            if (p < (int)nread && buf[p] == '\x15') {
+                duration = strtod(&buf[p + 1], NULL);
+                while (p < (int)nread && buf[p] != '\x14') p++;
             }
 
-            /* Find text (after 0x14) */
-            int text_start = dur_start;
-            if (text_start < (int)nread && buf[text_start] == '\x14') text_start++;
+            /* Each annotation follows a 0x14 and ends at the next 0x14 */
+            while (p < (int)nread && buf[p] == '\x14' &&
+                   edf->annotation_count < ENI_EDF_MAX_ANNOTATIONS) {
+                int text_start = p + 1;
+                int text_end = text_start;
+                while (text_end < (int)nread && buf[text_end] != '\x14' && buf[text_end] != '\0')
+                    text_end++;
 
-            int text_end = text_start;
-            while (text_end < (int)nread && buf[text_end] != '\x14' && buf[text_end] != '\0')
-                text_end++;
-
-            int text_len = text_end - text_start;
-            if (text_len > 0 && text_len < (int)sizeof(a->text)) {
-                memcpy(a->text, &buf[text_start], (size_t)text_len);
-                a->text[text_len] = '\0';
-                edf->annotation_count++;
+                int text_len = text_end - text_start;
+                if (text_len > 0 && text_len < (int)sizeof(edf->annotations[0].text)) {
+                    eni_edf_annotation_t *a = &edf->annotations[edf->annotation_count];
+                    a->onset = onset;
+                    a->duration = duration;
+                    memcpy(a->text, &buf[text_start], (size_t)text_len);
+                    a->text[text_len] = '\0';
+                    edf->annotation_count++;
+                }
+                p = text_end;
             }
 
-            pos = text_end + 1;
-            if (pos < (int)nread && buf[pos] == '\0') break; /* End of TAL */
+            /* Skip to the 0x00 that ends this TAL; the next TAL follows it */
+            while (p < (int)nread && buf[p] != '\0') p++;
+            pos = p + 1;
         }
         free(buf);
     }
