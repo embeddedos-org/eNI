@@ -72,21 +72,32 @@ eni_status_t eni_native_read_samples(eni_native_file_t *nf, double *samples,
     if (!nf || !nf->fp || !samples || !samples_read) return ENI_ERR_INVALID;
     *samples_read = 0;
 
-    while (!feof(nf->fp) && *samples_read < max_samples) {
+    while (*samples_read < max_samples) {
+        /* Samples left in the current data chunk come first: a call that
+         * filled the buffer mid-chunk leaves them for the next call. */
+        if (nf->data_left >= sizeof(float)) {
+            float val;
+            if (fread(&val, sizeof(float), 1, nf->fp) != 1) {
+                nf->data_left = 0;
+                break;
+            }
+            nf->data_left -= (uint32_t)sizeof(float);
+            samples[(*samples_read)++] = (double)val;
+            continue;
+        }
+        /* Skip a trailing partial sample, if any, then read the next chunk. */
+        if (nf->data_left > 0) {
+            fseek(nf->fp, (long)nf->data_left, SEEK_CUR);
+            nf->data_left = 0;
+        }
+
         uint16_t tag;
         uint32_t len;
         if (fread(&tag, 2, 1, nf->fp) != 1) break;
         if (fread(&len, 4, 1, nf->fp) != 1) break;
 
         if (tag == ENI_FMT_CHUNK_DATA) {
-            int n = (int)(len / sizeof(float));
-            for (int i = 0; i < n && *samples_read < max_samples; i++) {
-                float val;
-                if (fread(&val, sizeof(float), 1, nf->fp) != 1) break;
-                samples[(*samples_read)++] = (double)val;
-                len -= sizeof(float);
-            }
-            if (len > 0) fseek(nf->fp, (long)len, SEEK_CUR);
+            nf->data_left = len;
         } else {
             fseek(nf->fp, (long)len, SEEK_CUR);
         }
