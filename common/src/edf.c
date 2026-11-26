@@ -152,17 +152,23 @@ eni_status_t eni_edf_open(eni_edf_file_t *edf, const char *path)
 
     /* Calculate record size and data offset. Accumulate in int64_t: the sum of
      * up to ENI_DATA_MAX_CHANNELS counts does not necessarily fit in the int
-     * record_size is stored in, and signed overflow is undefined behaviour. */
+     * these are stored in, and signed overflow is undefined behaviour.
+     * record_samples is summed the same way and bounded the same way — it is
+     * fed by the same attacker-controlled per-signal counts. */
     int64_t record_size = 0;
-    for (int i = 0; i < ns; i++)
+    int64_t record_samples = 0;
+    for (int i = 0; i < ns; i++) {
+        record_samples += edf->header.channels[i].samples_per_record;
         record_size += (int64_t)edf->header.channels[i].samples_per_record * 2; /* 16-bit */
+    }
 
-    if (record_size > INT_MAX) {
+    if (record_size > INT_MAX || record_samples > INT_MAX) {
         fclose(edf->fp);
         edf->fp = NULL;
         return ENI_ERR_CONFIG;
     }
     edf->record_size = (int)record_size;
+    edf->record_samples = (int)record_samples;
 
     edf->data_offset = header_bytes;
 
@@ -226,43 +232,49 @@ eni_status_t eni_edf_read_annotations(eni_edf_file_t *edf)
         size_t nread = fread(buf, 1, (size_t)annot_bytes, edf->fp);
         buf[nread] = '\0';
 
-        /* Simple TAL parse */
+        /* Parse every TAL in the signal. A TAL is
+         *   +onset [0x15 duration] 0x14 [annotation 0x14]... 0x00
+         * and the first one in each record is the time-keeping TAL, which
+         * has no annotation. Bytes after the last TAL are 0x00 padding. */
         int pos = 0;
         while (pos < (int)nread && edf->annotation_count < ENI_EDF_MAX_ANNOTATIONS) {
             if (buf[pos] != '+' && buf[pos] != '-') { pos++; continue; }
 
-            eni_edf_annotation_t *a = &edf->annotations[edf->annotation_count];
-            a->onset = strtod(&buf[pos], NULL);
+            double onset = strtod(&buf[pos], NULL);
+            double duration = 0.0;
 
-            /* Find duration separator (0x15) */
-            int dur_start = pos;
-            while (dur_start < (int)nread && buf[dur_start] != '\x15' && buf[dur_start] != '\x14')
-                dur_start++;
-
-            a->duration = 0.0;
-            if (dur_start < (int)nread && buf[dur_start] == '\x15') {
-                a->duration = strtod(&buf[dur_start + 1], NULL);
-                dur_start++;
-                while (dur_start < (int)nread && buf[dur_start] != '\x14') dur_start++;
+            /* Find the duration separator (0x15) or the end of the onset (0x14) */
+            int p = pos;
+            while (p < (int)nread && buf[p] != '\x15' && buf[p] != '\x14')
+                p++;
+            if (p < (int)nread && buf[p] == '\x15') {
+                duration = strtod(&buf[p + 1], NULL);
+                while (p < (int)nread && buf[p] != '\x14') p++;
             }
 
-            /* Find text (after 0x14) */
-            int text_start = dur_start;
-            if (text_start < (int)nread && buf[text_start] == '\x14') text_start++;
+            /* Each annotation follows a 0x14 and ends at the next 0x14 */
+            while (p < (int)nread && buf[p] == '\x14' &&
+                   edf->annotation_count < ENI_EDF_MAX_ANNOTATIONS) {
+                int text_start = p + 1;
+                int text_end = text_start;
+                while (text_end < (int)nread && buf[text_end] != '\x14' && buf[text_end] != '\0')
+                    text_end++;
 
-            int text_end = text_start;
-            while (text_end < (int)nread && buf[text_end] != '\x14' && buf[text_end] != '\0')
-                text_end++;
-
-            int text_len = text_end - text_start;
-            if (text_len > 0 && text_len < (int)sizeof(a->text)) {
-                memcpy(a->text, &buf[text_start], (size_t)text_len);
-                a->text[text_len] = '\0';
-                edf->annotation_count++;
+                int text_len = text_end - text_start;
+                if (text_len > 0 && text_len < (int)sizeof(edf->annotations[0].text)) {
+                    eni_edf_annotation_t *a = &edf->annotations[edf->annotation_count];
+                    a->onset = onset;
+                    a->duration = duration;
+                    memcpy(a->text, &buf[text_start], (size_t)text_len);
+                    a->text[text_len] = '\0';
+                    edf->annotation_count++;
+                }
+                p = text_end;
             }
 
-            pos = text_end + 1;
-            if (pos < (int)nread && buf[pos] == '\0') break; /* End of TAL */
+            /* Skip to the 0x00 that ends this TAL; the next TAL follows it */
+            while (p < (int)nread && buf[p] != '\0') p++;
+            pos = p + 1;
         }
         free(buf);
     }
@@ -330,8 +342,11 @@ eni_status_t eni_edf_create(eni_edf_file_t *edf, const char *path,
 
     edf->data_offset = header_size;
     edf->record_size = 0;
-    for (int i = 0; i < ns; i++)
+    edf->record_samples = 0;
+    for (int i = 0; i < ns; i++) {
+        edf->record_samples += header->channels[i].samples_per_record;
         edf->record_size += header->channels[i].samples_per_record * 2;
+    }
 
     return ENI_OK;
 }
@@ -341,13 +356,18 @@ eni_status_t eni_edf_write_record(eni_edf_file_t *edf, const double *samples,
 {
     if (!edf || !edf->fp || !edf->writing || !samples) return ENI_ERR_INVALID;
 
-    /* A record holds samples_per_record samples of every channel. Writing
-     * fewer would make it shorter than the header says, and every later
-     * record would be read from the wrong offset. */
-    int64_t record_samples = 0;
-    for (int ch = 0; ch < edf->header.num_channels; ch++)
-        record_samples += edf->header.channels[ch].samples_per_record;
-    if (num_samples < record_samples) return ENI_ERR_INVALID;
+    /* A record holds samples_per_record samples of every channel, no more and
+     * no less. Writing fewer would make the record shorter than the header
+     * says, and every later record would be read from the wrong offset.
+     * Writing more has nowhere to put the tail: the loop below stops at one
+     * record, so the extra samples would be dropped on the floor while
+     * num_records still advanced and the call still reported success. Both
+     * are caller bugs; refuse them before touching the file. */
+    if (num_samples != edf->record_samples) {
+        ENI_LOG_ERROR("edf", "write_record: got %d samples, a record is %d",
+                      num_samples, edf->record_samples);
+        return ENI_ERR_INVALID;
+    }
 
     int sample_idx = 0;
     for (int ch = 0; ch < edf->header.num_channels; ch++) {

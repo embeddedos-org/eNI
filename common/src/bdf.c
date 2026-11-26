@@ -125,15 +125,19 @@ eni_status_t eni_bdf_open(eni_bdf_file_t *bdf, const char *path)
 
     /* Accumulate in int64_t; see the matching comment in edf.c. */
     int64_t record_size = 0;
-    for (int i = 0; i < ns; i++)
+    int64_t record_samples = 0;
+    for (int i = 0; i < ns; i++) {
+        record_samples += bdf->header.channels[i].samples_per_record;
         record_size += (int64_t)bdf->header.channels[i].samples_per_record * 3; /* 24-bit */
+    }
 
-    if (record_size > INT_MAX) {
+    if (record_size > INT_MAX || record_samples > INT_MAX) {
         fclose(bdf->fp);
         bdf->fp = NULL;
         return ENI_ERR_CONFIG;
     }
     bdf->record_size = (int)record_size;
+    bdf->record_samples = (int)record_samples;
 
     bdf->data_offset = header_bytes;
     return ENI_OK;
@@ -209,7 +213,11 @@ eni_status_t eni_bdf_create(eni_bdf_file_t *bdf, const char *path,
 
     bdf->data_offset = header_size;
     bdf->record_size = 0;
-    for (int i = 0; i < ns; i++) bdf->record_size += header->channels[i].samples_per_record * 3;
+    bdf->record_samples = 0;
+    for (int i = 0; i < ns; i++) {
+        bdf->record_samples += header->channels[i].samples_per_record;
+        bdf->record_size += header->channels[i].samples_per_record * 3;
+    }
 
     return ENI_OK;
 }
@@ -218,13 +226,18 @@ eni_status_t eni_bdf_write_record(eni_bdf_file_t *bdf, const double *samples, in
 {
     if (!bdf || !bdf->fp || !bdf->writing || !samples) return ENI_ERR_INVALID;
 
-    /* A record holds samples_per_record samples of every channel. Writing
-     * fewer would make it shorter than the header says, and every later
-     * record would be read from the wrong offset. */
-    int64_t record_samples = 0;
-    for (int ch = 0; ch < bdf->header.num_channels; ch++)
-        record_samples += bdf->header.channels[ch].samples_per_record;
-    if (num_samples < record_samples) return ENI_ERR_INVALID;
+    /* A record holds samples_per_record samples of every channel, no more and
+     * no less. Writing fewer would make the record shorter than the header
+     * says, and every later record would be read from the wrong offset.
+     * Writing more has nowhere to put the tail: the loop below stops at one
+     * record, so the extra samples would be dropped on the floor while
+     * num_records still advanced and the call still reported success. Both
+     * are caller bugs; refuse them before touching the file. */
+    if (num_samples != bdf->record_samples) {
+        ENI_LOG_ERROR("bdf", "write_record: got %d samples, a record is %d",
+                      num_samples, bdf->record_samples);
+        return ENI_ERR_INVALID;
+    }
 
     int sample_idx = 0;
     for (int ch = 0; ch < bdf->header.num_channels; ch++) {
