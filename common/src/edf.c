@@ -134,6 +134,15 @@ eni_status_t eni_edf_open(eni_edf_file_t *edf, const char *path)
     for (int i = 0; i < ns; i++) {
         read_fixed(edf->fp, buf, sizeof(buf), 8);
         edf->header.channels[i].samples_per_record = atoi(buf);
+        /* The field is attacker-controlled: atoi() reports no error, so a
+         * non-positive count would make record_size and every seek derived
+         * from it nonsense, and an unbounded one overflows the multiply
+         * below. Reject both here, before the value is used. */
+        if (edf->header.channels[i].samples_per_record <= 0) {
+            fclose(edf->fp);
+            edf->fp = NULL;
+            return ENI_ERR_CONFIG;
+        }
         if (edf->header.record_duration > 0.0)
             edf->header.channels[i].sample_rate =
                 edf->header.channels[i].samples_per_record / edf->header.record_duration;
@@ -141,13 +150,25 @@ eni_status_t eni_edf_open(eni_edf_file_t *edf, const char *path)
     for (int i = 0; i < ns; i++)
         read_fixed(edf->fp, buf, sizeof(buf), 32); /* reserved per signal — skip */
 
-    /* Calculate record size and data offset */
-    edf->record_size = 0;
-    edf->record_samples = 0;
+    /* Calculate record size and data offset. Accumulate in int64_t: the sum of
+     * up to ENI_DATA_MAX_CHANNELS counts does not necessarily fit in the int
+     * these are stored in, and signed overflow is undefined behaviour.
+     * record_samples is summed the same way and bounded the same way — it is
+     * fed by the same attacker-controlled per-signal counts. */
+    int64_t record_size = 0;
+    int64_t record_samples = 0;
     for (int i = 0; i < ns; i++) {
-        edf->record_samples += edf->header.channels[i].samples_per_record;
-        edf->record_size += edf->header.channels[i].samples_per_record * 2; /* 16-bit */
+        record_samples += edf->header.channels[i].samples_per_record;
+        record_size += (int64_t)edf->header.channels[i].samples_per_record * 2; /* 16-bit */
     }
+
+    if (record_size > INT_MAX || record_samples > INT_MAX) {
+        fclose(edf->fp);
+        edf->fp = NULL;
+        return ENI_ERR_CONFIG;
+    }
+    edf->record_size = (int)record_size;
+    edf->record_samples = (int)record_samples;
 
     edf->data_offset = header_bytes;
 

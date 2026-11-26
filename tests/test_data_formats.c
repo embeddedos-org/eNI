@@ -837,6 +837,140 @@ static void test_edf_bdf_write_short_record_refused(void)
     else PASS();
 }
 
+/* Overwrite the 8-byte ASCII samples-per-record field of channel `ch` in an
+ * EDF/BDF header that was written with `ns` signals, the way a corrupt or
+ * hostile file would carry it. Layout per the EDF spec: a 256-byte fixed
+ * header, then the per-signal arrays
+ * label(16) transducer(80) dim(8) pmin(8) pmax(8) dmin(8) dmax(8) prefilt(80)
+ * = 216 bytes per signal, and samples-per-record follows them. */
+static bool patch_samples_per_record(const char *path, int ns, int ch, const char *text)
+{
+    long off = 256 + 216L * ns + 8L * ch;
+    char field[9];
+    memset(field, ' ', 8);
+    field[8] = '\0';
+    memcpy(field, text, strlen(text));
+
+    FILE *fp = fopen(path, "r+b");
+    if (!fp) return false;
+    if (fseek(fp, off, SEEK_SET) != 0) { fclose(fp); return false; }
+    bool ok = fwrite(field, 1, 8, fp) == 8;
+    fclose(fp);
+    return ok;
+}
+
+/* A header field parsed with bare atoi() reports no error, so eni_edf_open()
+ * has to range-check it: a non-positive count makes record_size and every
+ * seek derived from it nonsense, and an unbounded one overflows the int
+ * multiply that builds record_size. Both must be refused at parse time. */
+static void test_edf_rejects_bad_samples_per_record(void)
+{
+    TEST(edf_rejects_bad_samples_per_record);
+    const char *path = "/tmp/eni_test_bad_spr.edf";
+    const char *bad[] = { "0", "-1", "-999999" };
+
+    for (size_t i = 0; i < sizeof(bad) / sizeof(bad[0]); i++) {
+        eni_data_header_t hdr;
+        fill_full_width_header(&hdr);
+        eni_edf_file_t edf;
+        assert(eni_edf_create(&edf, path, &hdr) == ENI_OK);
+        double samples[4] = {0.0, 1.0, -1.0, 0.5};
+        assert(eni_edf_write_record(&edf, samples, 4) == ENI_OK);
+        assert(eni_edf_finalize(&edf) == ENI_OK);
+
+        assert(patch_samples_per_record(path, 1, 0, bad[i]));
+
+        eni_edf_file_t rd;
+        eni_status_t st = eni_edf_open(&rd, path);
+        eni_edf_close(&rd);
+        remove(path);
+        if (st != ENI_ERR_CONFIG) {
+            char msg[160];
+            snprintf(msg, sizeof(msg),
+                     "samples_per_record='%s' accepted: open returned %d", bad[i], (int)st);
+            FAIL(msg);
+            return;
+        }
+    }
+    PASS();
+}
+
+/* Each per-channel count fits in the 8-character field, but their sum does
+ * not fit in the int record_size is stored in. Before the guard this was a
+ * signed-overflow UB and produced a negative record size. */
+static void test_edf_rejects_record_size_overflow(void)
+{
+    TEST(edf_rejects_record_size_overflow);
+    const char *path = "/tmp/eni_test_spr_overflow.edf";
+    const int ns = ENI_DATA_MAX_CHANNELS;
+
+    eni_data_header_t hdr;
+    eni_data_header_init(&hdr);
+    hdr.num_channels = ns;
+    hdr.record_duration = 1.0;
+    for (int i = 0; i < ns; i++) {
+        snprintf(hdr.channels[i].label, ENI_DATA_MAX_LABEL, "ch%d", i);
+        hdr.channels[i].physical_min = -1.0;
+        hdr.channels[i].physical_max = 1.0;
+        hdr.channels[i].digital_min = -32768;
+        hdr.channels[i].digital_max = 32767;
+        hdr.channels[i].samples_per_record = 1;
+    }
+
+    eni_edf_file_t edf;
+    assert(eni_edf_create(&edf, path, &hdr) == ENI_OK);
+    assert(eni_edf_finalize(&edf) == ENI_OK);
+
+    /* 256 channels x 99,999,999 samples x 2 bytes = 51,199,999,488 bytes. */
+    for (int i = 0; i < ns; i++)
+        assert(patch_samples_per_record(path, ns, i, "99999999"));
+
+    eni_edf_file_t rd;
+    eni_status_t st = eni_edf_open(&rd, path);
+    eni_edf_close(&rd);
+    remove(path);
+
+    if (st != ENI_ERR_CONFIG) {
+        char msg[160];
+        snprintf(msg, sizeof(msg), "overflowing record_size accepted: open returned %d", (int)st);
+        FAIL(msg);
+        return;
+    }
+    PASS();
+}
+
+/* The BDF reader parses the same field the same way, at 3 bytes per sample. */
+static void test_bdf_rejects_bad_samples_per_record(void)
+{
+    TEST(bdf_rejects_bad_samples_per_record);
+    const char *path = "/tmp/eni_test_bad_spr.bdf";
+
+    eni_data_header_t hdr;
+    fill_full_width_header(&hdr);
+    hdr.channels[0].digital_min = -8388608;
+    hdr.channels[0].digital_max = 8388607;
+
+    eni_bdf_file_t bdf;
+    assert(eni_bdf_create(&bdf, path, &hdr) == ENI_OK);
+    double samples[4] = {0.0, 1.0, -1.0, 0.5};
+    assert(eni_bdf_write_record(&bdf, samples, 4) == ENI_OK);
+    assert(eni_bdf_finalize(&bdf) == ENI_OK);
+
+    assert(patch_samples_per_record(path, 1, 0, "0"));
+
+    eni_bdf_file_t rd;
+    eni_status_t st = eni_bdf_open(&rd, path);
+    eni_bdf_close(&rd);
+    remove(path);
+
+    if (st != ENI_ERR_CONFIG) {
+        char msg[160];
+        snprintf(msg, sizeof(msg), "samples_per_record='0' accepted: open returned %d", (int)st);
+        FAIL(msg);
+        return;
+    }
+    PASS();
+}
 /* The mirror case: an oversized call used to write one record, silently drop
  * the tail and still advance num_records, so the caller lost data and was
  * told it had succeeded. It must now be refused like a short one, leaving the
@@ -995,6 +1129,9 @@ int main(void)
     test_xdf_open_bounds_sample_count_to_file();
     test_recorder_stop_with_partial_record();
     test_edf_bdf_write_short_record_refused();
+    test_edf_rejects_bad_samples_per_record();
+    test_edf_rejects_record_size_overflow();
+    test_bdf_rejects_bad_samples_per_record();
     test_edf_bdf_write_long_record_refused();
     test_edf_bdf_record_samples_stored();
     printf("\n%d/%d tests passed\n", tests_passed, tests_run);
