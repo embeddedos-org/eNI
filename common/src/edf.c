@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <limits.h>
 
 /* Read a fixed-width ASCII header field of len bytes (at most 80) into buf,
  * which holds cap bytes. All len characters are kept when buf has room for
@@ -197,9 +198,30 @@ eni_status_t eni_edf_read_annotations(eni_edf_file_t *edf)
     if (annot_ch < 0) return ENI_OK; /* No annotations channel */
 
     edf->annotation_count = 0;
+    edf->dropped_count = 0;
     /* Parse TAL (Time-stamped Annotation Lists) from annotation channel */
     /* Each TAL: +onset\x15duration\x14annotation\x14\x00 */
-    for (int64_t r = 0; r < edf->header.num_records && edf->annotation_count < ENI_EDF_MAX_ANNOTATIONS; r++) {
+    /* Every record is scanned even once the table is full, so dropped_count
+     * ends up being the true number of annotations lost rather than however
+     * many happened to be seen before the parser stopped.
+     *
+     * Because of that, the scan length is no longer bounded by the table
+     * filling up, so it must be bounded by the file instead. An EDF header
+     * can claim any record count, and seeking past the end of a regular file
+     * succeeds, so a short file claiming 99,999,999 records would otherwise
+     * hold this loop in a malloc/fseek/fread cycle for every claimed record.
+     * Clamp the scan to the records the file actually contains. */
+    int64_t num_records = edf->header.num_records;
+    if (edf->record_size > 0 && fseek(edf->fp, 0, SEEK_END) == 0) {
+        long file_size = ftell(edf->fp);
+        if (file_size >= 0) {
+            int64_t avail = ((int64_t)file_size - edf->data_offset) / edf->record_size;
+            if (avail < 0) avail = 0;
+            if (avail < num_records) num_records = avail;
+        }
+    }
+
+    for (int64_t r = 0; r < num_records; r++) {
         int64_t offset = edf->data_offset + r * edf->record_size;
         /* Skip to annotation channel */
         for (int c = 0; c < annot_ch; c++)
@@ -219,7 +241,7 @@ eni_status_t eni_edf_read_annotations(eni_edf_file_t *edf)
          * and the first one in each record is the time-keeping TAL, which
          * has no annotation. Bytes after the last TAL are 0x00 padding. */
         int pos = 0;
-        while (pos < (int)nread && edf->annotation_count < ENI_EDF_MAX_ANNOTATIONS) {
+        while (pos < (int)nread) {
             if (buf[pos] != '+' && buf[pos] != '-') { pos++; continue; }
 
             double onset = strtod(&buf[pos], NULL);
@@ -235,21 +257,31 @@ eni_status_t eni_edf_read_annotations(eni_edf_file_t *edf)
             }
 
             /* Each annotation follows a 0x14 and ends at the next 0x14 */
-            while (p < (int)nread && buf[p] == '\x14' &&
-                   edf->annotation_count < ENI_EDF_MAX_ANNOTATIONS) {
+            while (p < (int)nread && buf[p] == '\x14') {
                 int text_start = p + 1;
                 int text_end = text_start;
                 while (text_end < (int)nread && buf[text_end] != '\x14' && buf[text_end] != '\0')
                     text_end++;
 
                 int text_len = text_end - text_start;
-                if (text_len > 0 && text_len < (int)sizeof(edf->annotations[0].text)) {
-                    eni_edf_annotation_t *a = &edf->annotations[edf->annotation_count];
-                    a->onset = onset;
-                    a->duration = duration;
-                    memcpy(a->text, &buf[text_start], (size_t)text_len);
-                    a->text[text_len] = '\0';
-                    edf->annotation_count++;
+                /* text_len == 0 is the empty text of a time-keeping TAL, not
+                 * an annotation, so it is neither stored nor counted. */
+                if (text_len > 0) {
+                    if (text_len >= (int)sizeof(edf->annotations[0].text) ||
+                        edf->annotation_count >= ENI_EDF_MAX_ANNOTATIONS) {
+                        /* A real annotation that will not fit: too long for
+                         * the fixed text buffer, or the table is full. Count
+                         * it so the caller can tell a truncated read from a
+                         * file that simply has few annotations. */
+                        if (edf->dropped_count < INT_MAX) edf->dropped_count++;
+                    } else {
+                        eni_edf_annotation_t *a = &edf->annotations[edf->annotation_count];
+                        a->onset = onset;
+                        a->duration = duration;
+                        memcpy(a->text, &buf[text_start], (size_t)text_len);
+                        a->text[text_len] = '\0';
+                        edf->annotation_count++;
+                    }
                 }
                 p = text_end;
             }
@@ -259,6 +291,12 @@ eni_status_t eni_edf_read_annotations(eni_edf_file_t *edf)
             pos = p + 1;
         }
         free(buf);
+    }
+
+    if (edf->dropped_count > 0) {
+        ENI_LOG_WARN("edf", "dropped %d annotation(s): %d stored, table holds %d",
+                     edf->dropped_count, edf->annotation_count, ENI_EDF_MAX_ANNOTATIONS);
+        return ENI_ERR_OVERFLOW;
     }
     return ENI_OK;
 }
