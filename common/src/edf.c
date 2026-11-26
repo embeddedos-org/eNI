@@ -143,8 +143,11 @@ eni_status_t eni_edf_open(eni_edf_file_t *edf, const char *path)
 
     /* Calculate record size and data offset */
     edf->record_size = 0;
-    for (int i = 0; i < ns; i++)
+    edf->record_samples = 0;
+    for (int i = 0; i < ns; i++) {
+        edf->record_samples += edf->header.channels[i].samples_per_record;
         edf->record_size += edf->header.channels[i].samples_per_record * 2; /* 16-bit */
+    }
 
     edf->data_offset = header_bytes;
 
@@ -338,8 +341,11 @@ eni_status_t eni_edf_create(eni_edf_file_t *edf, const char *path,
 
     edf->data_offset = header_size;
     edf->record_size = 0;
-    for (int i = 0; i < ns; i++)
+    edf->record_samples = 0;
+    for (int i = 0; i < ns; i++) {
+        edf->record_samples += header->channels[i].samples_per_record;
         edf->record_size += header->channels[i].samples_per_record * 2;
+    }
 
     return ENI_OK;
 }
@@ -349,13 +355,18 @@ eni_status_t eni_edf_write_record(eni_edf_file_t *edf, const double *samples,
 {
     if (!edf || !edf->fp || !edf->writing || !samples) return ENI_ERR_INVALID;
 
-    /* A record holds samples_per_record samples of every channel. Writing
-     * fewer would make it shorter than the header says, and every later
-     * record would be read from the wrong offset. */
-    int64_t record_samples = 0;
-    for (int ch = 0; ch < edf->header.num_channels; ch++)
-        record_samples += edf->header.channels[ch].samples_per_record;
-    if (num_samples < record_samples) return ENI_ERR_INVALID;
+    /* A record holds samples_per_record samples of every channel, no more and
+     * no less. Writing fewer would make the record shorter than the header
+     * says, and every later record would be read from the wrong offset.
+     * Writing more has nowhere to put the tail: the loop below stops at one
+     * record, so the extra samples would be dropped on the floor while
+     * num_records still advanced and the call still reported success. Both
+     * are caller bugs; refuse them before touching the file. */
+    if (num_samples != edf->record_samples) {
+        ENI_LOG_ERROR("edf", "write_record: got %d samples, a record is %d",
+                      num_samples, edf->record_samples);
+        return ENI_ERR_INVALID;
+    }
 
     int sample_idx = 0;
     for (int ch = 0; ch < edf->header.num_channels; ch++) {
