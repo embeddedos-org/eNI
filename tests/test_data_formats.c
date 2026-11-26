@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdbool.h>
+#include <time.h>
 #include "eni/data_format.h"
 #include "eni/edf.h"
 #include "eni/bdf.h"
@@ -251,9 +252,8 @@ static void test_edf_read_annotations_after_timekeeping_tal(void)
 }
 
 /* Build a one-record EDF+ whose annotation signal holds `tal_bytes` bytes of
- * caller-supplied TALs, then read the annotations back. */
-static eni_status_t read_back_tals(const char *path, const char *tals, int tal_bytes,
-                                   eni_edf_file_t *rd)
+ * caller-supplied TALs. */
+static void build_tal_file(const char *path, const char *tals, int tal_bytes)
 {
     eni_data_header_t hdr;
     eni_data_header_init(&hdr);
@@ -286,7 +286,13 @@ static eni_status_t read_back_tals(const char *path, const char *tals, int tal_b
     assert(fseek(fp, (long)(data_offset + 4 * 2), SEEK_SET) == 0);
     assert(fwrite(tals, 1, (size_t)tal_bytes, fp) == (size_t)tal_bytes);
     fclose(fp);
+}
 
+/* Build that file, then read the annotations back. */
+static eni_status_t read_back_tals(const char *path, const char *tals, int tal_bytes,
+                                   eni_edf_file_t *rd)
+{
+    build_tal_file(path, tals, tal_bytes);
     assert(eni_edf_open(rd, path) == ENI_OK);
     return eni_edf_read_annotations(rd);
 }
@@ -398,6 +404,52 @@ static void test_edf_read_annotations_complete_read_reports_no_loss(void)
         char msg[200];
         snprintf(msg, sizeof(msg), "rc=%d, annotation_count=%d, dropped_count=%d",
                  (int)rc, rd.annotation_count, rd.dropped_count);
+        FAIL(msg);
+    }
+    eni_edf_close(&rd);
+    remove(path);
+    if (ok) PASS();
+}
+
+/* The parser no longer stops once the annotation table is full, so the scan
+ * length is bounded by the file rather than by the table. An EDF header can
+ * claim any record count, and seeking past the end of a regular file
+ * succeeds, so a one-record file claiming 99,999,999 records must not send
+ * the parser round a malloc/fseek/fread cycle 99,999,999 times. */
+static void test_edf_read_annotations_bounds_scan_to_file(void)
+{
+    TEST(edf_read_annotations_bounds_scan_to_file);
+    const char *path = "/tmp/eni_test_annot_record_claim.edf";
+    static const char tals[64] =
+        "+0" "\x14" "\x14" "\0"
+        "+1.5" "\x15" "2" "\x14" "Stim on" "\x14" "\0";
+
+    build_tal_file(path, tals, (int)sizeof(tals));
+
+    /* Claim 99,999,999 records in a file that holds exactly one. Offset 236
+     * is the EDF header's "number of data records" field. */
+    FILE *fp = fopen(path, "r+b");
+    assert(fp);
+    assert(fseek(fp, 236, SEEK_SET) == 0);
+    assert(fwrite("99999999", 1, 8, fp) == 8);
+    fclose(fp);
+
+    eni_edf_file_t rd;
+    assert(eni_edf_open(&rd, path) == ENI_OK);
+
+    clock_t started = clock();
+    eni_status_t rc = eni_edf_read_annotations(&rd);
+    double elapsed = (double)(clock() - started) / (double)CLOCKS_PER_SEC;
+
+    /* Generous bound: the clamped scan is one record and finishes in well
+     * under a millisecond, while the unbounded scan takes minutes. */
+    bool ok = rc == ENI_OK && rd.annotation_count == 1 &&
+              rd.dropped_count == 0 && elapsed < 5.0;
+    if (!ok) {
+        char msg[200];
+        snprintf(msg, sizeof(msg),
+                 "rc=%d, annotation_count=%d, dropped_count=%d, elapsed=%.3fs",
+                 (int)rc, rd.annotation_count, rd.dropped_count, elapsed);
         FAIL(msg);
     }
     eni_edf_close(&rd);
@@ -754,6 +806,7 @@ int main(void)
     test_edf_read_annotations_reports_oversized_text();
     test_edf_read_annotations_reports_table_full();
     test_edf_read_annotations_complete_read_reports_no_loss();
+    test_edf_read_annotations_bounds_scan_to_file();
     test_bdf_header_full_width_fields();
     test_annotation_system();
     test_recorder_stop_with_partial_record();

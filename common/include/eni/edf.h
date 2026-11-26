@@ -63,7 +63,27 @@ eni_status_t eni_edf_read_record(eni_edf_file_t *edf, int64_t record_idx,
  * Returns ENI_OK when every annotation was stored, and ENI_ERR_OVERFLOW when
  * dropped_count > 0 — the stored annotations are still valid and complete up
  * to annotation_count, but the list is not the whole file. ENI_OK with a
- * short list therefore means a short file, not a truncated read. */
+ * short list therefore means a short file, not a truncated read.
+ *
+ * Returns ENI_ERR_INVALID when edf is NULL or has no open file handle.
+ *
+ * The scan is bounded by the records the file actually contains, not by the
+ * record count its header claims, so a malformed header cannot make this
+ * run for longer than the file warrants.
+ *
+ *   eni_edf_file_t *edf = malloc(sizeof *edf);   // 324 KB: never on the stack
+ *   if (eni_edf_open(edf, path) == ENI_OK) {
+ *       eni_status_t rc = eni_edf_read_annotations(edf);
+ *       if (rc == ENI_ERR_OVERFLOW)
+ *           printf("%d stored, %d lost\n",
+ *                  edf->annotation_count, edf->dropped_count);
+ *       for (int i = 0; i < edf->annotation_count; i++)
+ *           printf("%.3fs %s\n",
+ *                  edf->annotations[i].onset, edf->annotations[i].text);
+ *       eni_edf_close(edf);
+ *   }
+ *   free(edf);
+ */
 eni_status_t eni_edf_read_annotations(eni_edf_file_t *edf);
 void         eni_edf_close(eni_edf_file_t *edf);
 
