@@ -11,6 +11,7 @@
 #include <time.h>
 #include "eni/data_format.h"
 #include "eni/edf.h"
+#include "eni/xdf.h"
 #include "eni/bdf.h"
 #include "eni/annotation.h"
 #include "eni/recorder.h"
@@ -302,6 +303,74 @@ static void test_edf_read_annotations_after_timekeeping_tal(void)
     if (ok) PASS();
 }
 
+/* sample_count is what callers size their buffers from — the Python binding
+ * allocates sample_count * channel_count doubles up front — so it must count
+ * only payload the file actually holds. A samples chunk whose declared
+ * length runs past the end of the file must not inflate it. */
+static void test_xdf_open_bounds_sample_count_to_file(void)
+{
+    TEST(xdf_open_bounds_sample_count_to_file);
+    const char *path = "/tmp/eni_test_sample_count_trunc.xdf";
+    eni_xdf_stream_t eeg;
+    memset(&eeg, 0, sizeof(eeg));
+    eeg.stream_id = 1; strcpy(eeg.name, "EEG"); strcpy(eeg.type, "EEG");
+    eeg.channel_count = 1; eeg.nominal_srate = 256.0;
+
+    const double eeg_a[4] = {1, 2, 3, 4};
+
+    eni_xdf_file_t wr;
+    assert(eni_xdf_create(&wr, path) == ENI_OK);
+    assert(eni_xdf_add_stream(&wr, &eeg) == ENI_OK);
+    assert(eni_xdf_write_samples(&wr, 1, eeg_a, 4) == ENI_OK);
+    /* End of the samples payload, before finalize appends stream footers. */
+    long after_samples = ftell(wr.fp);
+    assert(after_samples > 24);
+    assert(eni_xdf_finalize(&wr) == ENI_OK);
+
+    /* Cut the file 20 bytes into the samples payload: the chunk header still
+     * declares four values, but only the first survives whole on disk. */
+    long truncated = after_samples - 20;
+
+    FILE *fp = fopen(path, "rb");
+    assert(fp);
+    char *bytes = (char *)malloc((size_t)truncated);
+    assert(bytes);
+    assert(fread(bytes, 1, (size_t)truncated, fp) == (size_t)truncated);
+    fclose(fp);
+
+    fp = fopen(path, "wb");
+    assert(fp);
+    assert(fwrite(bytes, 1, (size_t)truncated, fp) == (size_t)truncated);
+    fclose(fp);
+    free(bytes);
+
+    eni_xdf_file_t rd;
+    assert(eni_xdf_open(&rd, path) == ENI_OK);
+    int64_t count = -1;
+    for (int i = 0; i < rd.stream_count; i++)
+        if (rd.streams[i].stream_id == 1) count = rd.streams[i].sample_count;
+
+    /* sample_count must describe what is really there: equal to the values
+     * eni_xdf_read_samples() can actually return, not the four the truncated
+     * chunk header still claims. */
+    double buf[16] = {0};
+    int n = 0;
+    eni_status_t rs = eni_xdf_read_samples(&rd, 1, buf, 16, &n);
+    eni_xdf_close(&rd);
+    remove(path);
+
+    bool ok = rs == ENI_OK && n >= 1 && n < 4 && count == (int64_t)n;
+    if (!ok) {
+        char msg[200];
+        snprintf(msg, sizeof(msg),
+                 "sample_count=%lld but only %d value(s) are readable "
+                 "(chunk header still claims 4)",
+                 (long long)count, n);
+        FAIL(msg);
+    }
+    if (ok) PASS();
+}
+
 /* Build a one-record EDF+ whose annotation signal holds `tal_bytes` bytes of
  * caller-supplied TALs. */
 static void build_tal_file(const char *path, const char *tals, int tal_bytes)
@@ -557,6 +626,67 @@ static void test_annotation_system(void)
     assert(list.count == 2);
 
     PASS();
+}
+
+/* eni_xdf_open() must report how many samples each stream holds, so a reader
+ * can size its buffer as sample_count * channel_count (read_xdf() in the
+ * Python binding does exactly that). */
+static void test_xdf_open_sets_sample_count(void)
+{
+    TEST(xdf_open_sets_sample_count);
+    const char *path = "/tmp/eni_test_sample_count.xdf";
+    eni_xdf_stream_t eeg, mrk;
+    memset(&eeg, 0, sizeof(eeg));
+    memset(&mrk, 0, sizeof(mrk));
+    eeg.stream_id = 1; strcpy(eeg.name, "EEG"); strcpy(eeg.type, "EEG");
+    eeg.channel_count = 2; eeg.nominal_srate = 256.0;
+    mrk.stream_id = 2; strcpy(mrk.name, "Markers"); strcpy(mrk.type, "Markers");
+    mrk.channel_count = 1; mrk.nominal_srate = 0.0;
+
+    const double eeg_a[6] = {1, 2, 3, 4, 5, 6};
+    const double eeg_b[4] = {7, 8, 9, 10};
+    const double mrk_a[3] = {100, 200, 300};
+
+    eni_xdf_file_t wr;
+    assert(eni_xdf_create(&wr, path) == ENI_OK);
+    assert(eni_xdf_add_stream(&wr, &eeg) == ENI_OK);
+    assert(eni_xdf_add_stream(&wr, &mrk) == ENI_OK);
+    assert(eni_xdf_write_samples(&wr, 1, eeg_a, 6) == ENI_OK);
+    assert(eni_xdf_write_samples(&wr, 2, mrk_a, 3) == ENI_OK);
+    assert(eni_xdf_write_clock_offset(&wr, 1, 0.25) == ENI_OK);
+    assert(eni_xdf_write_samples(&wr, 1, eeg_b, 4) == ENI_OK);
+    assert(eni_xdf_finalize(&wr) == ENI_OK);
+
+    eni_xdf_file_t rd;
+    assert(eni_xdf_open(&rd, path) == ENI_OK);
+    int64_t eeg_count = -1, mrk_count = -1;
+    int eeg_channels = 0;
+    for (int i = 0; i < rd.stream_count; i++) {
+        if (rd.streams[i].stream_id == 1) {
+            eeg_count = rd.streams[i].sample_count;
+            eeg_channels = rd.streams[i].channel_count;
+        }
+        if (rd.streams[i].stream_id == 2) mrk_count = rd.streams[i].sample_count;
+    }
+    /* A buffer sized from sample_count must hold every value of the stream. */
+    double buf[16] = {0};
+    int n = 0;
+    int cap = (int)(eeg_count * eeg_channels);
+    if (cap < 1) cap = 1;
+    if (cap > 16) cap = 16;
+    eni_status_t rs = eni_xdf_read_samples(&rd, 1, buf, cap, &n);
+    eni_xdf_close(&rd);
+    remove(path);
+
+    if (eeg_count == 5 && mrk_count == 3 && rs == ENI_OK && n == 10 &&
+        fabs(buf[0] - 1.0) < 1e-9 && fabs(buf[9] - 10.0) < 1e-9) {
+        PASS();
+    } else {
+        char msg[160];
+        snprintf(msg, sizeof(msg), "sample_count EEG=%lld Markers=%lld (want 5, 3); read %d of 10 EEG values",
+                 (long long)eeg_count, (long long)mrk_count, n);
+        FAIL(msg);
+    }
 }
 
 #ifndef _WIN32
@@ -861,6 +991,8 @@ int main(void)
     test_edf_read_annotations_bounds_scan_to_file();
     test_bdf_header_full_width_fields();
     test_annotation_system();
+    test_xdf_open_sets_sample_count();
+    test_xdf_open_bounds_sample_count_to_file();
     test_recorder_stop_with_partial_record();
     test_edf_bdf_write_short_record_refused();
     test_edf_bdf_write_long_record_refused();
