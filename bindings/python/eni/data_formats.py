@@ -109,6 +109,7 @@ class _EdfFile(ctypes.Structure):
         ("writing", ctypes.c_bool),
         ("data_offset", ctypes.c_int64),
         ("record_size", ctypes.c_int),
+        ("record_samples", ctypes.c_int),
     ]
 
 
