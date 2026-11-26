@@ -8,11 +8,13 @@
 #include <assert.h>
 #include <math.h>
 #include <stdbool.h>
+#include <time.h>
 #include "eni/data_format.h"
 #include "eni/edf.h"
 #include "eni/bdf.h"
 #include "eni/annotation.h"
 #include "eni/recorder.h"
+#include "eni/eni_format.h"
 #ifndef _WIN32
 #include <signal.h>
 #include <unistd.h>
@@ -51,6 +53,56 @@ static void test_format_names(void)
     assert(strcmp(eni_data_format_name(ENI_FORMAT_XDF), "XDF") == 0);
     assert(strcmp(eni_data_format_name(ENI_FORMAT_ENI), "ENI") == 0);
     PASS();
+}
+
+/* Reading a native file in calls smaller than a data chunk must return every
+ * sample once, in order: the part of a chunk that did not fit in the buffer is
+ * read by the next call, not skipped. */
+static void test_native_read_samples_across_calls(void)
+{
+    TEST(native_read_samples_across_calls);
+    const char *path = "/tmp/eni_test_native_read.eni";
+    eni_data_header_t hdr;
+    memset(&hdr, 0, sizeof(hdr));
+    hdr.num_channels = 1;
+    strcpy(hdr.channels[0].label, "C3");
+    hdr.channels[0].sample_rate = 256.0;
+
+    double chunk0[10], chunk1[3];
+    for (int i = 0; i < 10; i++) chunk0[i] = (double)(i + 1);
+    for (int i = 0; i < 3; i++) chunk1[i] = (double)(i + 11);
+
+    eni_native_file_t wr;
+    assert(eni_native_create(&wr, path, &hdr, 0) == ENI_OK);
+    assert(eni_native_write_samples(&wr, chunk0, 10) == ENI_OK);
+    assert(eni_native_write_event(&wr, 0.5, "marker") == ENI_OK);
+    assert(eni_native_write_samples(&wr, chunk1, 3) == ENI_OK);
+    assert(eni_native_finalize(&wr) == ENI_OK);
+
+    eni_native_file_t rd;
+    assert(eni_native_open(&rd, path) == ENI_OK);
+    double got[16] = {0};
+    int total = 0, calls = 0, n = 0;
+    do {
+        double buf[4];
+        assert(eni_native_read_samples(&rd, buf, 4, &n) == ENI_OK);
+        for (int i = 0; i < n && total < 16; i++) got[total++] = buf[i];
+        calls++;
+    } while (n > 0 && calls < 20);
+    eni_native_close(&rd);
+    remove(path);
+
+    bool ok = (total == 13);
+    for (int i = 0; ok && i < 13; i++)
+        if (fabs(got[i] - (double)(i + 1)) > 1e-6) ok = false;
+    if (ok) {
+        PASS();
+    } else {
+        char msg[160];
+        snprintf(msg, sizeof(msg), "read %d of 13 samples in 4-sample calls: %g %g %g %g %g ...",
+                 total, got[0], got[1], got[2], got[3], got[4]);
+        FAIL(msg);
+    }
 }
 
 static void test_edf_digital_physical_conversion(void)
@@ -179,6 +231,278 @@ static void test_edf_header_full_width_fields(void)
     eni_edf_file_t rd;
     assert(eni_edf_open(&rd, path) == ENI_OK);
     bool ok = full_width_header_ok(&rd.header);
+    eni_edf_close(&rd);
+    remove(path);
+    if (ok) PASS();
+}
+
+/* An EDF+ record's annotation signal starts with a time-keeping TAL
+ * ("+0" 0x14 0x14 0x00); the record's annotations follow it, and one TAL
+ * may carry several annotations that share its onset. */
+static void test_edf_read_annotations_after_timekeeping_tal(void)
+{
+    TEST(edf_read_annotations_after_timekeeping_tal);
+    const char *path = "/tmp/eni_test_annotations.edf";
+    eni_data_header_t hdr;
+    eni_data_header_init(&hdr);
+    hdr.num_channels = 2;
+    hdr.record_duration = 1.0;
+    for (int i = 0; i < 2; i++) {
+        hdr.channels[i].physical_min = -3200.0;
+        hdr.channels[i].physical_max = 3200.0;
+        hdr.channels[i].digital_min = -32768;
+        hdr.channels[i].digital_max = 32767;
+        hdr.channels[i].sample_rate = 4.0;
+    }
+    strncpy(hdr.channels[0].label, "EEG Fz", ENI_DATA_MAX_LABEL - 1);
+    hdr.channels[0].samples_per_record = 4;
+    strncpy(hdr.channels[1].label, "EDF Annotations", ENI_DATA_MAX_LABEL - 1);
+    hdr.channels[1].samples_per_record = 32; /* 64 bytes of TALs */
+
+    eni_edf_file_t edf;
+    assert(eni_edf_create(&edf, path, &hdr) == ENI_OK);
+    int64_t data_offset = edf.data_offset;
+    double zeros[36] = {0};
+    assert(eni_edf_write_record(&edf, zeros, 36) == ENI_OK);
+    assert(eni_edf_finalize(&edf) == ENI_OK);
+
+    /* Put TALs in the record's annotation signal (after 4 EEG samples). */
+    static const char tals[] =
+        "+0" "\x14" "\x14" "\0"
+        "+1.5" "\x15" "2" "\x14" "Stim on" "\x14" "\0"
+        "+3" "\x14" "Eyes closed" "\x14" "Blink" "\x14" "\0";
+    char annot[64] = {0};
+    memcpy(annot, tals, sizeof(tals) - 1);
+    FILE *fp = fopen(path, "r+b");
+    assert(fp);
+    assert(fseek(fp, (long)(data_offset + 4 * 2), SEEK_SET) == 0);
+    assert(fwrite(annot, 1, sizeof(annot), fp) == sizeof(annot));
+    fclose(fp);
+
+    eni_edf_file_t rd;
+    assert(eni_edf_open(&rd, path) == ENI_OK);
+    assert(eni_edf_read_annotations(&rd) == ENI_OK);
+    bool ok = rd.annotation_count == 3 &&
+              rd.annotations[0].onset == 1.5 && rd.annotations[0].duration == 2.0 &&
+              strcmp(rd.annotations[0].text, "Stim on") == 0 &&
+              rd.annotations[1].onset == 3.0 && rd.annotations[1].duration == 0.0 &&
+              strcmp(rd.annotations[1].text, "Eyes closed") == 0 &&
+              rd.annotations[2].onset == 3.0 &&
+              strcmp(rd.annotations[2].text, "Blink") == 0;
+    if (!ok) {
+        char msg[200];
+        snprintf(msg, sizeof(msg), "read %d annotation(s), want 3 (first: onset=%g text='%s')",
+                 rd.annotation_count,
+                 rd.annotation_count > 0 ? rd.annotations[0].onset : 0.0,
+                 rd.annotation_count > 0 ? rd.annotations[0].text : "");
+        FAIL(msg);
+    }
+    eni_edf_close(&rd);
+    remove(path);
+    if (ok) PASS();
+}
+
+/* Build a one-record EDF+ whose annotation signal holds `tal_bytes` bytes of
+ * caller-supplied TALs. */
+static void build_tal_file(const char *path, const char *tals, int tal_bytes)
+{
+    eni_data_header_t hdr;
+    eni_data_header_init(&hdr);
+    hdr.num_channels = 2;
+    hdr.record_duration = 1.0;
+    for (int i = 0; i < 2; i++) {
+        hdr.channels[i].physical_min = -3200.0;
+        hdr.channels[i].physical_max = 3200.0;
+        hdr.channels[i].digital_min = -32768;
+        hdr.channels[i].digital_max = 32767;
+        hdr.channels[i].sample_rate = 4.0;
+    }
+    strncpy(hdr.channels[0].label, "EEG Fz", ENI_DATA_MAX_LABEL - 1);
+    hdr.channels[0].samples_per_record = 4;
+    strncpy(hdr.channels[1].label, "EDF Annotations", ENI_DATA_MAX_LABEL - 1);
+    hdr.channels[1].samples_per_record = tal_bytes / 2;
+
+    eni_edf_file_t edf;
+    assert(eni_edf_create(&edf, path, &hdr) == ENI_OK);
+    int64_t data_offset = edf.data_offset;
+    int record_samples = 4 + tal_bytes / 2;
+    double *zeros = (double *)calloc((size_t)record_samples, sizeof(double));
+    assert(zeros);
+    assert(eni_edf_write_record(&edf, zeros, record_samples) == ENI_OK);
+    assert(eni_edf_finalize(&edf) == ENI_OK);
+    free(zeros);
+
+    FILE *fp = fopen(path, "r+b");
+    assert(fp);
+    assert(fseek(fp, (long)(data_offset + 4 * 2), SEEK_SET) == 0);
+    assert(fwrite(tals, 1, (size_t)tal_bytes, fp) == (size_t)tal_bytes);
+    fclose(fp);
+}
+
+/* Build that file, then read the annotations back. */
+static eni_status_t read_back_tals(const char *path, const char *tals, int tal_bytes,
+                                   eni_edf_file_t *rd)
+{
+    build_tal_file(path, tals, tal_bytes);
+    assert(eni_edf_open(rd, path) == ENI_OK);
+    return eni_edf_read_annotations(rd);
+}
+
+/* An annotation whose text does not fit eni_edf_annotation_t::text used to be
+ * skipped with no trace at all, and the call still returned ENI_OK. The loss
+ * must now be visible: counted in dropped_count and reported as
+ * ENI_ERR_OVERFLOW, while the annotations that do fit are still returned. */
+static void test_edf_read_annotations_reports_oversized_text(void)
+{
+    TEST(edf_read_annotations_reports_oversized_text);
+    const char *path = "/tmp/eni_test_annot_long.edf";
+
+    /* Time-keeping TAL, then a 300-character annotation (longer than the
+     * 256-byte text buffer), then one that fits. */
+    char tals[1024];
+    memset(tals, 0, sizeof(tals));
+    int n = 0;
+    memcpy(tals + n, "+0" "\x14" "\x14", 4); n += 4;
+    tals[n++] = '\0';
+    memcpy(tals + n, "+1" "\x14", 3);        n += 3;
+    memset(tals + n, 'x', 300);              n += 300;
+    tals[n++] = '\x14';
+    tals[n++] = '\0';
+    memcpy(tals + n, "+2" "\x14" "Short" "\x14", 9); n += 9;
+    tals[n++] = '\0';
+    assert(n <= (int)sizeof(tals));
+
+    eni_edf_file_t rd;
+    eni_status_t rc = read_back_tals(path, tals, (int)sizeof(tals), &rd);
+
+    bool ok = rc == ENI_ERR_OVERFLOW &&
+              rd.dropped_count == 1 &&
+              rd.annotation_count == 1 &&
+              strcmp(rd.annotations[0].text, "Short") == 0;
+    if (!ok) {
+        char msg[200];
+        snprintf(msg, sizeof(msg),
+                 "rc=%d (want %d), annotation_count=%d (want 1), dropped_count=%d (want 1)",
+                 (int)rc, (int)ENI_ERR_OVERFLOW, rd.annotation_count, rd.dropped_count);
+        FAIL(msg);
+    }
+    eni_edf_close(&rd);
+    remove(path);
+    if (ok) PASS();
+}
+
+/* Past ENI_EDF_MAX_ANNOTATIONS the parser used to stop and return ENI_OK, so a
+ * truncated list was indistinguishable from a short file. It must now keep
+ * scanning, count every annotation it cannot store, and report
+ * ENI_ERR_OVERFLOW with the exact number lost. */
+static void test_edf_read_annotations_reports_table_full(void)
+{
+    TEST(edf_read_annotations_reports_table_full);
+    const char *path = "/tmp/eni_test_annot_cap.edf";
+
+    /* Time-keeping TAL (5 bytes incl. its NUL), then `count` TALs of
+     * "+1" 0x14 "a" 0x14 0x00 — 6 bytes each, one annotation each. */
+    const int extra = 5;
+    const int count = ENI_EDF_MAX_ANNOTATIONS + extra;
+    int tal_bytes = 5 + count * 6;
+    if (tal_bytes % 2) tal_bytes++;              /* samples are 2 bytes */
+    char *tals = (char *)calloc((size_t)tal_bytes, 1);
+    assert(tals);
+    int n = 0;
+    memcpy(tals + n, "+0" "\x14" "\x14", 4); n += 4;
+    tals[n++] = '\0';
+    for (int i = 0; i < count; i++) {
+        memcpy(tals + n, "+1" "\x14" "a" "\x14", 5); n += 5;
+        tals[n++] = '\0';
+    }
+    assert(n <= tal_bytes);
+
+    eni_edf_file_t rd;
+    eni_status_t rc = read_back_tals(path, tals, tal_bytes, &rd);
+    free(tals);
+
+    bool ok = rc == ENI_ERR_OVERFLOW &&
+              rd.annotation_count == ENI_EDF_MAX_ANNOTATIONS &&
+              rd.dropped_count == extra;
+    if (!ok) {
+        char msg[200];
+        snprintf(msg, sizeof(msg),
+                 "rc=%d (want %d), annotation_count=%d (want %d), dropped_count=%d (want %d)",
+                 (int)rc, (int)ENI_ERR_OVERFLOW, rd.annotation_count,
+                 ENI_EDF_MAX_ANNOTATIONS, rd.dropped_count, extra);
+        FAIL(msg);
+    }
+    eni_edf_close(&rd);
+    remove(path);
+    if (ok) PASS();
+}
+
+/* The complete-read case must stay ENI_OK with dropped_count == 0, so callers
+ * can trust the distinction. */
+static void test_edf_read_annotations_complete_read_reports_no_loss(void)
+{
+    TEST(edf_read_annotations_complete_read_reports_no_loss);
+    const char *path = "/tmp/eni_test_annot_ok.edf";
+    static const char tals[64] =
+        "+0" "\x14" "\x14" "\0"
+        "+1.5" "\x15" "2" "\x14" "Stim on" "\x14" "\0";
+
+    eni_edf_file_t rd;
+    eni_status_t rc = read_back_tals(path, tals, (int)sizeof(tals), &rd);
+
+    bool ok = rc == ENI_OK && rd.annotation_count == 1 && rd.dropped_count == 0;
+    if (!ok) {
+        char msg[200];
+        snprintf(msg, sizeof(msg), "rc=%d, annotation_count=%d, dropped_count=%d",
+                 (int)rc, rd.annotation_count, rd.dropped_count);
+        FAIL(msg);
+    }
+    eni_edf_close(&rd);
+    remove(path);
+    if (ok) PASS();
+}
+
+/* The parser no longer stops once the annotation table is full, so the scan
+ * length is bounded by the file rather than by the table. An EDF header can
+ * claim any record count, and seeking past the end of a regular file
+ * succeeds, so a one-record file claiming 99,999,999 records must not send
+ * the parser round a malloc/fseek/fread cycle 99,999,999 times. */
+static void test_edf_read_annotations_bounds_scan_to_file(void)
+{
+    TEST(edf_read_annotations_bounds_scan_to_file);
+    const char *path = "/tmp/eni_test_annot_record_claim.edf";
+    static const char tals[64] =
+        "+0" "\x14" "\x14" "\0"
+        "+1.5" "\x15" "2" "\x14" "Stim on" "\x14" "\0";
+
+    build_tal_file(path, tals, (int)sizeof(tals));
+
+    /* Claim 99,999,999 records in a file that holds exactly one. Offset 236
+     * is the EDF header's "number of data records" field. */
+    FILE *fp = fopen(path, "r+b");
+    assert(fp);
+    assert(fseek(fp, 236, SEEK_SET) == 0);
+    assert(fwrite("99999999", 1, 8, fp) == 8);
+    fclose(fp);
+
+    eni_edf_file_t rd;
+    assert(eni_edf_open(&rd, path) == ENI_OK);
+
+    clock_t started = clock();
+    eni_status_t rc = eni_edf_read_annotations(&rd);
+    double elapsed = (double)(clock() - started) / (double)CLOCKS_PER_SEC;
+
+    /* Generous bound: the clamped scan is one record and finishes in well
+     * under a millisecond, while the unbounded scan takes minutes. */
+    bool ok = rc == ENI_OK && rd.annotation_count == 1 &&
+              rd.dropped_count == 0 && elapsed < 5.0;
+    if (!ok) {
+        char msg[200];
+        snprintf(msg, sizeof(msg),
+                 "rc=%d, annotation_count=%d, dropped_count=%d, elapsed=%.3fs",
+                 (int)rc, rd.annotation_count, rd.dropped_count, elapsed);
+        FAIL(msg);
+    }
     eni_edf_close(&rd);
     remove(path);
     if (ok) PASS();
@@ -383,18 +707,164 @@ static void test_edf_bdf_write_short_record_refused(void)
     else PASS();
 }
 
+/* The mirror case: an oversized call used to write one record, silently drop
+ * the tail and still advance num_records, so the caller lost data and was
+ * told it had succeeded. It must now be refused like a short one, leaving the
+ * file byte-identical. */
+static void test_edf_bdf_write_long_record_refused(void)
+{
+    TEST(edf_bdf_write_long_record_refused);
+    const double rec0[4] = {1.0, 2.0, 3.0, 4.0};
+    const double rec1[4] = {5.0, 6.0, 7.0, 8.0};
+    const double long_rec[6] = {9.0, 9.0, 9.0, 9.0, 9.0, 9.0}; /* 1.5 records */
+    char msg[320] = "";
+
+    const char *edf_path = "/tmp/eni_test_long_record.edf";
+    eni_data_header_t hdr;
+    short_record_header(&hdr);
+    for (int i = 0; i < 2; i++) { hdr.channels[i].digital_min = -32768; hdr.channels[i].digital_max = 32767; }
+    eni_edf_file_t edf;
+    assert(eni_edf_create(&edf, edf_path, &hdr) == ENI_OK);
+    assert(eni_edf_write_record(&edf, rec0, 4) == ENI_OK);
+    long edf_before = ftell(edf.fp);
+    eni_status_t edf_long = eni_edf_write_record(&edf, long_rec, 6);
+    long edf_after = ftell(edf.fp);
+    assert(eni_edf_write_record(&edf, rec1, 4) == ENI_OK);
+    assert(eni_edf_finalize(&edf) == ENI_OK);
+
+    eni_edf_file_t erd;
+    assert(eni_edf_open(&erd, edf_path) == ENI_OK);
+    double eback[4] = {0};
+    int64_t edf_records = erd.header.num_records;
+    eni_status_t edf_read = eni_edf_read_record(&erd, 1, eback, 4);
+    eni_edf_close(&erd);
+    remove(edf_path);
+    if (edf_long != ENI_ERR_INVALID || edf_before != edf_after || edf_records != 2 ||
+        edf_read != ENI_OK || fabs(eback[0] - 5.0) > 0.01 || fabs(eback[3] - 8.0) > 0.01)
+        snprintf(msg, sizeof(msg),
+                 "EDF: long write rc=%d, wrote %ld bytes, %lld records, record 1 = %g..%g "
+                 "(want rc=%d, 0 bytes, 2, 5..8)",
+                 (int)edf_long, edf_after - edf_before, (long long)edf_records,
+                 eback[0], eback[3], (int)ENI_ERR_INVALID);
+
+    const char *bdf_path = "/tmp/eni_test_long_record.bdf";
+    short_record_header(&hdr);
+    for (int i = 0; i < 2; i++) { hdr.channels[i].digital_min = -8388608; hdr.channels[i].digital_max = 8388607; }
+    eni_bdf_file_t bdf;
+    assert(eni_bdf_create(&bdf, bdf_path, &hdr) == ENI_OK);
+    assert(eni_bdf_write_record(&bdf, rec0, 4) == ENI_OK);
+    long bdf_before = ftell(bdf.fp);
+    eni_status_t bdf_long = eni_bdf_write_record(&bdf, long_rec, 6);
+    long bdf_after = ftell(bdf.fp);
+    assert(eni_bdf_write_record(&bdf, rec1, 4) == ENI_OK);
+    assert(eni_bdf_finalize(&bdf) == ENI_OK);
+
+    eni_bdf_file_t brd;
+    assert(eni_bdf_open(&brd, bdf_path) == ENI_OK);
+    double bback[4] = {0};
+    int64_t bdf_records = brd.header.num_records;
+    eni_status_t bdf_read = eni_bdf_read_record(&brd, 1, bback, 4);
+    eni_bdf_close(&brd);
+    remove(bdf_path);
+    if (bdf_long != ENI_ERR_INVALID || bdf_before != bdf_after || bdf_records != 2 ||
+        bdf_read != ENI_OK || fabs(bback[0] - 5.0) > 0.01 || fabs(bback[3] - 8.0) > 0.01) {
+        size_t used = strlen(msg);
+        snprintf(msg + used, sizeof(msg) - used,
+                 "%sBDF: long write rc=%d, wrote %ld bytes, %lld records, record 1 = %g..%g",
+                 used ? "; " : "", (int)bdf_long, bdf_after - bdf_before,
+                 (long long)bdf_records, bback[0], bback[3]);
+    }
+
+    if (msg[0]) FAIL(msg);
+    else PASS();
+}
+
+/* record_samples is stored once instead of being recomputed per write, so it
+ * must be right on both the create and the open path, and must agree with
+ * record_size. */
+static void test_edf_bdf_record_samples_stored(void)
+{
+    TEST(edf_bdf_record_samples_stored);
+    char msg[320] = "";
+
+    eni_data_header_t hdr;
+    eni_data_header_init(&hdr);
+    hdr.num_channels = 3;
+    hdr.record_duration = 1.0;
+    const int spr[3] = {8, 16, 4};   /* 28 samples per record */
+    for (int i = 0; i < 3; i++) {
+        snprintf(hdr.channels[i].label, ENI_DATA_MAX_LABEL, "Ch%d", i);
+        hdr.channels[i].physical_min = -100.0;
+        hdr.channels[i].physical_max = 100.0;
+        hdr.channels[i].digital_min = -32768;
+        hdr.channels[i].digital_max = 32767;
+        hdr.channels[i].samples_per_record = spr[i];
+        hdr.channels[i].sample_rate = (double)spr[i];
+    }
+    const int want = 28;
+
+    const char *edf_path = "/tmp/eni_test_record_samples.edf";
+    eni_edf_file_t edf;
+    assert(eni_edf_create(&edf, edf_path, &hdr) == ENI_OK);
+    int edf_create = edf.record_samples;
+    int edf_size = edf.record_size;
+    double samples[28] = {0};
+    assert(eni_edf_write_record(&edf, samples, want) == ENI_OK);
+    assert(eni_edf_finalize(&edf) == ENI_OK);
+    eni_edf_file_t erd;
+    assert(eni_edf_open(&erd, edf_path) == ENI_OK);
+    int edf_open = erd.record_samples;
+    eni_edf_close(&erd);
+    remove(edf_path);
+    if (edf_create != want || edf_open != want || edf_size != want * 2)
+        snprintf(msg, sizeof(msg),
+                 "EDF: create=%d open=%d record_size=%d (want %d, %d, %d)",
+                 edf_create, edf_open, edf_size, want, want, want * 2);
+
+    const char *bdf_path = "/tmp/eni_test_record_samples.bdf";
+    for (int i = 0; i < 3; i++) { hdr.channels[i].digital_min = -8388608; hdr.channels[i].digital_max = 8388607; }
+    eni_bdf_file_t bdf;
+    assert(eni_bdf_create(&bdf, bdf_path, &hdr) == ENI_OK);
+    int bdf_create = bdf.record_samples;
+    int bdf_size = bdf.record_size;
+    assert(eni_bdf_write_record(&bdf, samples, want) == ENI_OK);
+    assert(eni_bdf_finalize(&bdf) == ENI_OK);
+    eni_bdf_file_t brd;
+    assert(eni_bdf_open(&brd, bdf_path) == ENI_OK);
+    int bdf_open = brd.record_samples;
+    eni_bdf_close(&brd);
+    remove(bdf_path);
+    if (bdf_create != want || bdf_open != want || bdf_size != want * 3) {
+        size_t used = strlen(msg);
+        snprintf(msg + used, sizeof(msg) - used,
+                 "%sBDF: create=%d open=%d record_size=%d (want %d, %d, %d)",
+                 used ? "; " : "", bdf_create, bdf_open, bdf_size, want, want, want * 3);
+    }
+
+    if (msg[0]) FAIL(msg);
+    else PASS();
+}
+
 int main(void)
 {
     printf("=== Data Format Tests ===\n");
     test_format_detect();
     test_format_names();
+    test_native_read_samples_across_calls();
     test_edf_digital_physical_conversion();
     test_edf_write_read_roundtrip();
     test_edf_header_full_width_fields();
+    test_edf_read_annotations_after_timekeeping_tal();
+    test_edf_read_annotations_reports_oversized_text();
+    test_edf_read_annotations_reports_table_full();
+    test_edf_read_annotations_complete_read_reports_no_loss();
+    test_edf_read_annotations_bounds_scan_to_file();
     test_bdf_header_full_width_fields();
     test_annotation_system();
     test_recorder_stop_with_partial_record();
     test_edf_bdf_write_short_record_refused();
+    test_edf_bdf_write_long_record_refused();
+    test_edf_bdf_record_samples_stored();
     printf("\n%d/%d tests passed\n", tests_passed, tests_run);
     return tests_failed > 0 ? 1 : 0;
 }

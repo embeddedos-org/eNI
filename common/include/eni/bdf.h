@@ -17,7 +17,9 @@ typedef struct {
     FILE             *fp;
     bool              writing;
     int64_t           data_offset;
-    int               record_size;
+    int               record_size;    /* bytes per data record */
+    int               record_samples; /* samples per data record, summed over
+                                       * every channel */
 } eni_bdf_file_t;
 
 eni_status_t eni_bdf_open(eni_bdf_file_t *bdf, const char *path);
@@ -27,6 +29,14 @@ void         eni_bdf_close(eni_bdf_file_t *bdf);
 
 eni_status_t eni_bdf_create(eni_bdf_file_t *bdf, const char *path,
                              const eni_data_header_t *header);
+/* Append exactly one data record.
+ *
+ * Precondition: num_samples must equal bdf->record_samples, the sum of
+ * samples_per_record over every channel. BDF stores whole records only, so
+ * neither a short nor an oversized call can be written correctly: a short one
+ * would leave a record the header says is longer, and an oversized one has no
+ * place to put the tail. Both are refused with ENI_ERR_INVALID before any
+ * fwrite, leaving the file byte-identical and num_records unchanged. */
 eni_status_t eni_bdf_write_record(eni_bdf_file_t *bdf, const double *samples,
                                    int num_samples);
 eni_status_t eni_bdf_finalize(eni_bdf_file_t *bdf);

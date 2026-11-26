@@ -47,6 +47,13 @@ jobs:
           pip install pytest pytest-cov
           pip install -r requirements.txt 2>/dev/null || true
           python -m pytest tests/ -v --tb=short --cov=. --cov-report=xml
+      # The SDK at sdk/python has its own suite that nothing ran. It is kept
+      # out of the --cov=. run above on purpose: importing sdk/python/eni/core.py
+      # there would add its ctypes paths, which need libeni_common and so
+      # cannot execute in this job, to that job's coverage denominator.
+      # No `|| true`: a failing SDK test must fail the job.
+      - name: SDK tests
+        run: python -m pytest sdk/python/tests/ -v --tb=short
       - uses: codecov/codecov-action@v4
         with:
           files: coverage.xml

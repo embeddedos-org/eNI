@@ -63,6 +63,11 @@ ENI_DATA_MAX_CHANNELS = 256
 ENI_DATA_MAX_LABEL = 80
 ENI_EDF_MAX_ANNOTATIONS = 1024
 
+# eni_status_t: the annotation table could not hold everything in the file.
+# The annotations that were stored are still valid. Keep in step with
+# ENI_ERR_OVERFLOW in common/include/eni/types.h.
+ENI_ERR_OVERFLOW = 14
+
 
 class _ChannelInfo(ctypes.Structure):
     _fields_ = [
@@ -105,10 +110,12 @@ class _EdfFile(ctypes.Structure):
         ("header", _DataHeader),
         ("annotations", _EdfAnnotation * ENI_EDF_MAX_ANNOTATIONS),
         ("annotation_count", ctypes.c_int),
+        ("dropped_count", ctypes.c_int),
         ("fp", ctypes.c_void_p),
         ("writing", ctypes.c_bool),
         ("data_offset", ctypes.c_int64),
         ("record_size", ctypes.c_int),
+        ("record_samples", ctypes.c_int),
     ]
 
 
@@ -159,6 +166,12 @@ def read_edf(path: str) -> Dict[str, Any]:
                     num_channels, record_duration, num_records, channels.
             records: list of lists (one per record) of float sample values.
             annotations: list of dicts with onset, duration, text.
+            annotations_dropped: int, how many annotations the file holds
+                    that could not be stored. 0 means ``annotations`` is the
+                    whole file; > 0 means it is truncated by that many.
+
+    Raises:
+        OSError: if the file cannot be opened or the annotation parse fails.
     """
     lib = _get_lib()
 
@@ -218,8 +231,18 @@ def read_edf(path: str) -> Dict[str, Any]:
                 break
             records.append(list(buf))
 
-        # Read annotations
-        lib.eni_edf_read_annotations(ctypes.byref(edf))
+        # Read annotations. ENI_ERR_OVERFLOW means the file holds more (or
+        # longer) annotations than the C table can keep: what was read is
+        # still valid, and edf.dropped_count says how many were lost.
+        #
+        # Any other non-zero status means the parse itself failed, which
+        # leaves a partial list with dropped_count == 0 — indistinguishable
+        # from a complete read by the caller. Raise rather than return it.
+        rc = lib.eni_edf_read_annotations(ctypes.byref(edf))
+        if rc not in (0, ENI_ERR_OVERFLOW):
+            raise OSError(
+                f"eni_edf_read_annotations failed for '{path}' (status {rc})"
+            )
         annotations = []
         for i in range(edf.annotation_count):
             ann = edf.annotations[i]
@@ -233,6 +256,9 @@ def read_edf(path: str) -> Dict[str, Any]:
             "header": header_dict,
             "records": records,
             "annotations": annotations,
+            # 0 means the annotation list is the whole file; > 0 means it is
+            # truncated and this many annotations could not be read.
+            "annotations_dropped": edf.dropped_count,
         }
     finally:
         lib.eni_edf_close(ctypes.byref(edf))

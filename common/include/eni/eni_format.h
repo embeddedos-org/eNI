@@ -32,6 +32,7 @@ typedef struct {
     FILE             *fp;
     bool              writing;
     uint16_t          flags;
+    uint32_t          data_left; /* bytes of the current data chunk not yet read */
 } eni_native_file_t;
 
 eni_status_t eni_native_open(eni_native_file_t *nf, const char *path);
