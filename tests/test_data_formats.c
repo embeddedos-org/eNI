@@ -251,6 +251,74 @@ static void test_edf_read_annotations_after_timekeeping_tal(void)
     if (ok) PASS();
 }
 
+/* sample_count is what callers size their buffers from — the Python binding
+ * allocates sample_count * channel_count doubles up front — so it must count
+ * only payload the file actually holds. A samples chunk whose declared
+ * length runs past the end of the file must not inflate it. */
+static void test_xdf_open_bounds_sample_count_to_file(void)
+{
+    TEST(xdf_open_bounds_sample_count_to_file);
+    const char *path = "/tmp/eni_test_sample_count_trunc.xdf";
+    eni_xdf_stream_t eeg;
+    memset(&eeg, 0, sizeof(eeg));
+    eeg.stream_id = 1; strcpy(eeg.name, "EEG"); strcpy(eeg.type, "EEG");
+    eeg.channel_count = 1; eeg.nominal_srate = 256.0;
+
+    const double eeg_a[4] = {1, 2, 3, 4};
+
+    eni_xdf_file_t wr;
+    assert(eni_xdf_create(&wr, path) == ENI_OK);
+    assert(eni_xdf_add_stream(&wr, &eeg) == ENI_OK);
+    assert(eni_xdf_write_samples(&wr, 1, eeg_a, 4) == ENI_OK);
+    /* End of the samples payload, before finalize appends stream footers. */
+    long after_samples = ftell(wr.fp);
+    assert(after_samples > 24);
+    assert(eni_xdf_finalize(&wr) == ENI_OK);
+
+    /* Cut the file 20 bytes into the samples payload: the chunk header still
+     * declares four values, but only the first survives whole on disk. */
+    long truncated = after_samples - 20;
+
+    FILE *fp = fopen(path, "rb");
+    assert(fp);
+    char *bytes = (char *)malloc((size_t)truncated);
+    assert(bytes);
+    assert(fread(bytes, 1, (size_t)truncated, fp) == (size_t)truncated);
+    fclose(fp);
+
+    fp = fopen(path, "wb");
+    assert(fp);
+    assert(fwrite(bytes, 1, (size_t)truncated, fp) == (size_t)truncated);
+    fclose(fp);
+    free(bytes);
+
+    eni_xdf_file_t rd;
+    assert(eni_xdf_open(&rd, path) == ENI_OK);
+    int64_t count = -1;
+    for (int i = 0; i < rd.stream_count; i++)
+        if (rd.streams[i].stream_id == 1) count = rd.streams[i].sample_count;
+
+    /* sample_count must describe what is really there: equal to the values
+     * eni_xdf_read_samples() can actually return, not the four the truncated
+     * chunk header still claims. */
+    double buf[16] = {0};
+    int n = 0;
+    eni_status_t rs = eni_xdf_read_samples(&rd, 1, buf, 16, &n);
+    eni_xdf_close(&rd);
+    remove(path);
+
+    bool ok = rs == ENI_OK && n >= 1 && n < 4 && count == (int64_t)n;
+    if (!ok) {
+        char msg[200];
+        snprintf(msg, sizeof(msg),
+                 "sample_count=%lld but only %d value(s) are readable "
+                 "(chunk header still claims 4)",
+                 (long long)count, n);
+        FAIL(msg);
+    }
+    if (ok) PASS();
+}
+
 static void test_bdf_header_full_width_fields(void)
 {
     TEST(bdf_header_full_width_fields);
@@ -661,6 +729,7 @@ int main(void)
     test_bdf_header_full_width_fields();
     test_annotation_system();
     test_xdf_open_sets_sample_count();
+    test_xdf_open_bounds_sample_count_to_file();
     test_recorder_stop_with_partial_record();
     test_edf_bdf_write_short_record_refused();
     test_edf_bdf_write_long_record_refused();
