@@ -59,6 +59,17 @@ eni_status_t eni_xdf_open(eni_xdf_file_t *xdf, const char *path)
         return ENI_ERR_CONFIG;
     }
 
+    /* Size of the file, used to bound the sample counts below against what
+     * the file can actually hold. */
+    long xdf_file_size = -1;
+    if (fseek(xdf->fp, 0, SEEK_END) == 0) {
+        xdf_file_size = ftell(xdf->fp);
+    }
+    if (fseek(xdf->fp, 4, SEEK_SET) != 0) {
+        fclose(xdf->fp);
+        return ENI_ERR_IO;
+    }
+
     /* Read chunks */
     while (!feof(xdf->fp)) {
         uint32_t chunk_len = xdf_read_varlen(xdf->fp);
@@ -139,6 +150,42 @@ eni_status_t eni_xdf_open(eni_xdf_file_t *xdf, const char *path)
             }
             break;
         }
+        case ENI_XDF_CHUNK_SAMPLES: {
+            /* Count the stream's values (double64, as eni_xdf_read_samples()
+             * reads them) so sample_count can be set below. */
+            if (content_len < 4) {
+                fseek(xdf->fp, content_len, SEEK_CUR);
+                break;
+            }
+            uint32_t stream_id;
+            if (fread(&stream_id, 1, 4, xdf->fp) != 4) goto done;
+            content_len -= 4;
+
+            /* Count only payload the file actually contains. A chunk header
+             * can declare any length, and seeking past the end of a regular
+             * file succeeds, so a truncated or hostile chunk would otherwise
+             * inflate sample_count without bound. Callers size buffers from
+             * it — bindings/python/eni/data_formats.py allocates
+             * sample_count * channel_count doubles up front — so an
+             * unbounded count is an unbounded allocation. */
+            long counted = content_len;
+            long pos = ftell(xdf->fp);
+            if (xdf_file_size >= 0 && pos >= 0) {
+                long remaining = xdf_file_size > pos ? xdf_file_size - pos : 0;
+                if (counted > remaining) counted = remaining;
+            }
+
+            /* Every entry with this stream id, not just the first:
+             * eni_xdf_read_samples() returns the chunk's values for each of
+             * them, so stopping early would leave duplicates reporting zero. */
+            for (int i = 0; i < xdf->stream_count; i++) {
+                if (xdf->streams[i].stream_id == (int)stream_id) {
+                    xdf->streams[i].sample_count += counted / 8;
+                }
+            }
+            fseek(xdf->fp, content_len, SEEK_CUR);
+            break;
+        }
         default:
             fseek(xdf->fp, content_len, SEEK_CUR);
             break;
@@ -146,6 +193,13 @@ eni_status_t eni_xdf_open(eni_xdf_file_t *xdf, const char *path)
     }
 
 done:
+    /* sample_count is per channel (values are interleaved across channels);
+     * round up so sample_count * channel_count still covers every value. */
+    for (int i = 0; i < xdf->stream_count; i++) {
+        eni_xdf_stream_t *s = &xdf->streams[i];
+        if (s->channel_count > 1)
+            s->sample_count = (s->sample_count + s->channel_count - 1) / s->channel_count;
+    }
     ENI_LOG_INFO("xdf", "opened %s: %d streams", path, xdf->stream_count);
     return ENI_OK;
 }
