@@ -20,7 +20,12 @@ eni_status_t eni_native_open(eni_native_file_t *nf, const char *path)
     /* Read header */
     char magic[4];
     if (fread(magic, 1, 4, nf->fp) != 4 || memcmp(magic, ENI_FMT_MAGIC, 4) != 0) {
-        fclose(nf->fp); return ENI_ERR_CONFIG;
+        /* Clear the handle as well as closing it: eni_native_close() frees any
+         * non-NULL fp, so a caller that closes defensively after a failed open
+         * would otherwise fclose() the same FILE* twice. */
+        fclose(nf->fp);
+        nf->fp = NULL;
+        return ENI_ERR_CONFIG;
     }
 
     uint16_t version;
