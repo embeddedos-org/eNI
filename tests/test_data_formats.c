@@ -837,6 +837,97 @@ static void test_edf_bdf_write_short_record_refused(void)
     else PASS();
 }
 
+/* Overwrite the 4-byte ASCII number-of-signals field of an EDF/BDF header,
+ * which sits at offset 252: version(8) patient(80) recording(80) startdate(8)
+ * starttime(8) headerbytes(8) reserved(44) numrecords(8) duration(8) = 252. */
+static bool patch_num_signals(const char *path, const char *text)
+{
+    char field[5];
+    memset(field, ' ', 4);
+    field[4] = '\0';
+    if (strlen(text) > 4) return false;
+    memcpy(field, text, strlen(text));
+
+    FILE *fp = fopen(path, "r+b");
+    if (!fp) return false;
+    if (fseek(fp, 252, SEEK_SET) != 0) { fclose(fp); return false; }
+    bool ok = fwrite(field, 1, 4, fp) == 4;
+    fclose(fp);
+    return ok;
+}
+
+/* A failed open must not leave a closed FILE* behind in the handle.
+ * eni_edf_close()/eni_bdf_close() free any non-NULL fp, so a caller that
+ * closes defensively after a failed open -- which is the ordinary C idiom
+ * and what the rest of this suite does -- would fclose() the same FILE*
+ * twice. AddressSanitizer reports that as a double-free; without a
+ * sanitizer it is silent heap corruption. Assert the handle directly so the
+ * test fails deterministically in an ordinary build. */
+static void test_edf_bdf_failed_open_clears_handle(void)
+{
+    TEST(edf_bdf_failed_open_clears_handle);
+
+    const char *edf_path = "/tmp/eni_test_bad_ns.edf";
+    eni_data_header_t hdr;
+    fill_full_width_header(&hdr);
+
+    eni_edf_file_t ew;
+    assert(eni_edf_create(&ew, edf_path, &hdr) == ENI_OK);
+    double samples[4] = {0.0, 1.0, -1.0, 0.5};
+    assert(eni_edf_write_record(&ew, samples, 4) == ENI_OK);
+    assert(eni_edf_finalize(&ew) == ENI_OK);
+    assert(patch_num_signals(edf_path, "0"));
+
+    eni_edf_file_t erd;
+    eni_status_t est = eni_edf_open(&erd, edf_path);
+    if (est != ENI_ERR_CONFIG) {
+        char msg[128];
+        snprintf(msg, sizeof(msg), "edf: num_channels=0 accepted: open returned %d", (int)est);
+        remove(edf_path);
+        FAIL(msg);
+        return;
+    }
+    if (erd.fp != NULL) {
+        remove(edf_path);
+        FAIL("edf: failed open left a closed FILE* in the handle; "
+             "eni_edf_close() would fclose() it a second time");
+        return;
+    }
+    eni_edf_close(&erd); /* must be a no-op, not a second fclose */
+    remove(edf_path);
+
+    const char *bdf_path = "/tmp/eni_test_bad_ns.bdf";
+    eni_data_header_t bhdr;
+    fill_full_width_header(&bhdr);
+    bhdr.channels[0].digital_min = -8388608;
+    bhdr.channels[0].digital_max = 8388607;
+
+    eni_bdf_file_t bw;
+    assert(eni_bdf_create(&bw, bdf_path, &bhdr) == ENI_OK);
+    assert(eni_bdf_write_record(&bw, samples, 4) == ENI_OK);
+    assert(eni_bdf_finalize(&bw) == ENI_OK);
+    assert(patch_num_signals(bdf_path, "0"));
+
+    eni_bdf_file_t brd;
+    eni_status_t bst = eni_bdf_open(&brd, bdf_path);
+    if (bst != ENI_ERR_CONFIG) {
+        char msg[128];
+        snprintf(msg, sizeof(msg), "bdf: num_channels=0 accepted: open returned %d", (int)bst);
+        remove(bdf_path);
+        FAIL(msg);
+        return;
+    }
+    if (brd.fp != NULL) {
+        remove(bdf_path);
+        FAIL("bdf: failed open left a closed FILE* in the handle; "
+             "eni_bdf_close() would fclose() it a second time");
+        return;
+    }
+    eni_bdf_close(&brd);
+    remove(bdf_path);
+
+    PASS();
+}
 /* The mirror case: an oversized call used to write one record, silently drop
  * the tail and still advance num_records, so the caller lost data and was
  * told it had succeeded. It must now be refused like a short one, leaving the
@@ -995,6 +1086,7 @@ int main(void)
     test_xdf_open_bounds_sample_count_to_file();
     test_recorder_stop_with_partial_record();
     test_edf_bdf_write_short_record_refused();
+    test_edf_bdf_failed_open_clears_handle();
     test_edf_bdf_write_long_record_refused();
     test_edf_bdf_record_samples_stored();
     printf("\n%d/%d tests passed\n", tests_passed, tests_run);
