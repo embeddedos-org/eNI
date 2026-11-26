@@ -247,8 +247,22 @@ class DSPPipeline:
     def compute_band_power(self, psd):
         """Compute band power by integrating PSD over standard EEG bands.
 
-        Uses the trapezoidal approximation: power = sum(PSD[f1:f2]) * df
-        where df = sample_rate / fft_size.
+        Binning convention — half-open on the bin centre frequency:
+
+            bin i (centre frequency ``i * df``, ``df = sample_rate / fft_size``)
+            belongs to band ``(low, high)`` iff ``low <= i * df < high``.
+
+        Because the range is closed below and open above, a bin on a shared
+        band edge (4, 8, 13, 30 Hz) falls in the upper band only, so every
+        bin belongs to *exactly one* band and the five band powers sum to the
+        total power in [0.5, 100) Hz. The DC bin (``i == 0``, 0 Hz) is below
+        delta's 0.5 Hz lower edge and is therefore in no band at all.
+
+        This is the same rule ``eni_dsp_band_power()`` applies in C
+        (``common/src/dsp.c``: ``freq >= low_hz && freq < high_hz``), so the
+        C core and this SDK report identical band powers for identical PSDs.
+
+        Power is the rectangular sum ``sum(PSD[bins in band]) * df``.
 
         Args:
             psd: Power spectral density array (from compute_psd).
@@ -257,22 +271,15 @@ class DSPPipeline:
             Dict with keys: delta, theta, alpha, beta, gamma (float values).
         """
         psd_arr = np.asarray(psd, dtype=np.float64)
-        n_bins = len(psd_arr)
         freq_resolution = self.sample_rate / self.fft_size
+        bin_freqs = np.arange(len(psd_arr), dtype=np.float64) * freq_resolution
 
         result = {}
         for band_name, (f_low, f_high) in EEG_BANDS.items():
-            # Convert frequency limits to bin indices
-            idx_low = max(0, int(np.floor(f_low / freq_resolution)))
-            idx_high = min(n_bins, int(np.ceil(f_high / freq_resolution)))
-
-            if idx_low >= idx_high or idx_low >= n_bins:
-                result[band_name] = 0.0
-            else:
-                # Integrate PSD over the band (trapezoidal approximation)
-                result[band_name] = float(
-                    np.sum(psd_arr[idx_low:idx_high]) * freq_resolution
-                )
+            in_band = (bin_freqs >= f_low) & (bin_freqs < f_high)
+            result[band_name] = float(
+                np.sum(psd_arr[in_band]) * freq_resolution
+            )
 
         return result
 

@@ -22,6 +22,14 @@ typedef struct {
     char   text[256];
 } eni_edf_annotation_t;
 
+/* Host-side type — do not put one on the stack.
+ *
+ * The inline annotations table is ENI_EDF_MAX_ANNOTATIONS *
+ * sizeof(eni_edf_annotation_t) = 272 KB on its own, and the whole struct
+ * measures 332032 bytes (324 KB) on x86-64. That overruns a typical embedded
+ * thread stack outright, and even on a host it is a surprising object to
+ * copy. Allocate it statically or on the heap, never as a local, and always
+ * pass it by pointer — never by value. */
 typedef struct {
     eni_data_header_t     header;
     eni_edf_annotation_t  annotations[ENI_EDF_MAX_ANNOTATIONS];
@@ -29,7 +37,9 @@ typedef struct {
     FILE                 *fp;
     bool                  writing;
     int64_t               data_offset;
-    int                   record_size; /* bytes per data record */
+    int                   record_size;    /* bytes per data record */
+    int                   record_samples; /* samples per data record, summed
+                                           * over every channel */
 } eni_edf_file_t;
 
 /* Reading */
@@ -42,6 +52,14 @@ void         eni_edf_close(eni_edf_file_t *edf);
 /* Writing */
 eni_status_t eni_edf_create(eni_edf_file_t *edf, const char *path,
                              const eni_data_header_t *header);
+/* Append exactly one data record.
+ *
+ * Precondition: num_samples must equal edf->record_samples, the sum of
+ * samples_per_record over every channel. EDF stores whole records only, so
+ * neither a short nor an oversized call can be written correctly: a short one
+ * would leave a record the header says is longer, and an oversized one has no
+ * place to put the tail. Both are refused with ENI_ERR_INVALID before any
+ * fwrite, leaving the file byte-identical and num_records unchanged. */
 eni_status_t eni_edf_write_record(eni_edf_file_t *edf, const double *samples,
                                    int num_samples);
 eni_status_t eni_edf_write_annotation(eni_edf_file_t *edf, double onset,
