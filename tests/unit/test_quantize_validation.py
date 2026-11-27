@@ -179,5 +179,35 @@ class TestMainValidation(unittest.TestCase):
             self.assertFalse(os.path.exists(out))
 
 
+    def test_zero_weight_layer_accepted_when_source_is_zero(self):
+        """A layer whose source weights are all zero should not be rejected
+        by _output_valid — the all-zero quantized output is correct."""
+        with tempfile.TemporaryDirectory() as d:
+            inp = os.path.join(d, "m.eni_model")
+            out = os.path.join(d, "o.q")
+            write_eni_model(
+                inp,
+                [
+                    {
+                        "name": "dense_0",
+                        "input_size": 4,
+                        "output_size": 2,
+                        "activation": 1,
+                        "weights": [0.1, -0.5, 0.9, -0.05, 0.33, 1.5, -1.2, 0.01],
+                    },
+                    {
+                        "name": "bias_0",
+                        "input_size": 2,
+                        "output_size": 1,
+                        "activation": 0,
+                        "weights": [0.0, 0.0],
+                    },
+                ],
+                quantized=False,
+            )
+            main(["-i", inp, "-o", out])
+            self.assertTrue(os.path.exists(out))
+
+
 if __name__ == "__main__":
     unittest.main()
