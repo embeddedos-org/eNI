@@ -205,7 +205,7 @@ def main(argv=None):
     # output and fail closed.
     def _output_valid():
         for src, dst in zip(layers, quantized_layers):
-            if all(w == 0 for w in dst["weights"]):
+            if all(w == 0 for w in dst["weights"]) and not all(w == 0 for w in src["weights"]):
                 return False
             back = dequantize_weights(dst["weights"], dst["scale"], dst["zero_point"])
             if any(abs(w - b) > dst["scale"] for w, b in zip(src["weights"], back)):
